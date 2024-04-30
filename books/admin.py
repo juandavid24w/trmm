@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.db import models
 from django.shortcuts import redirect
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
+
+from loans.util import loan_link
+from profiles.admin import HiddenAdminMixin
 
 from .models import Book, Classification, Location, Specimen
 
@@ -15,14 +18,34 @@ def custom_title_filter_factory(title):
     return Wrapper
 
 
+@admin.register(Specimen)
+class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
+    search_fields = [
+        "book__isbn",
+        "book__title",
+        "book__author_last_name",
+        "book__author_first_names",
+        "book__publisher",
+        "book__classification__name",
+    ]
+
+
 class SpecimenInline(admin.TabularInline):
-    fields = ["number", "code"]
-    readonly_fields = ["number", "code"]
+    fields = ["number", "code", "loan", "available"]
+    readonly_fields = ["number", "code", "loan", "available"]
     model = Specimen
     extra = 0
 
     def has_add_permission(self, *args, **kwargs):
         return False
+
+    @admin.display(description=_("Fazer empréstimo"))
+    def loan(self, obj):
+        return loan_link({"specimen": obj.id})
+
+    @admin.display(description=_("Disponível?"), boolean=True)
+    def available(self, obj):
+        return obj.available
 
 
 @admin.register(Book)
@@ -43,6 +66,7 @@ class BookAdmin(admin.ModelAdmin):
     ]
     readonly_fields = ["units", "creation_date", "last_modified"]
     search_fields = (
+        "isbn",
         "title",
         "author_last_name",
         "author_first_names",

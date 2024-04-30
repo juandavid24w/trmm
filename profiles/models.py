@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 
 class Profile(models.Model):
@@ -56,7 +56,7 @@ class Profile(models.Model):
         return f"Profile({self.user})"
 
     def __str__(self):
-        return f"{self.user} ({self.grade})"
+        return f"{self.user.first_name} {self.user.last_name} ({self.grade})"
 
 
 class Email(models.Model):
@@ -72,4 +72,4 @@ class Email(models.Model):
 
     class Meta:
         verbose_name = _("Email adicional")
-        verbose_name = _("Emails adicionais")
+        verbose_name_plural = _("Emails adicionais")

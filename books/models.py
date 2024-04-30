@@ -1,6 +1,9 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils.translation import gettext as _
+from django.db.models import Count, Q
+from django.db.models.lookups import Exact
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from . import cutter
 from .language import ARTICLES
@@ -119,7 +122,22 @@ class Book(models.Model):
         verbose_name_plural = _("Livros")
 
 
+# pylint: disable-next=too-few-public-methods
+class SpecimenManager(models.Manager):
+    """Annotate if specimen is available (`available`)"""
+
+    def get_queryset(self, *args, **kwargs):
+        qs = super().get_queryset(*args, **kwargs)
+        count_returned = Count(
+            "loans", filter=Q(loans__return_date__lt=timezone.now())
+        )
+        qs = qs.annotate(available=Exact(count_returned, Count("loans")))
+
+        return qs
+
+
 class Specimen(models.Model):
+    objects = SpecimenManager()
     number = models.IntegerField(
         verbose_name=_("Número"),
         default=0,

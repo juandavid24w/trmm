@@ -30,12 +30,22 @@ lint:
 	done; \
 	echo ' -------------'
 
+define loanscript
+from loans.models import Period, Renewal; \
+Period(description="Acervo fixo", days=15).save(); \
+Period(description="Acervo móvel", days=30).save(); \
+Renewal(description="Primeira renovação", days=15).save(); \
+Renewal(description="Segunda renovação", days=15).save()
+endef
+
 reset_db:
-	rm db.sqlite3
-	rm -rf books/migrations/* profiles/migrations/*
+	rm -f db.sqlite3
+	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
 	. venv/bin/activate; ./manage.py makemigrations books
 	. venv/bin/activate; ./manage.py makemigrations profiles
+	. venv/bin/activate; ./manage.py makemigrations loans
 	. venv/bin/activate; ./manage.py migrate
 	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
 	. venv/bin/activate; ./manage.py import_profiles
 	. venv/bin/activate; ./manage.py import_books
+	. venv/bin/activate; ./manage.py shell -c '$(loanscript)'

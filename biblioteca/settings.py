@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "fieldsets_with_inlines",
     "profiles",
     "books",
+    "loans",
 ]
 
 MIDDLEWARE = [
