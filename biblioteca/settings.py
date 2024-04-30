@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-(j=u)7ztio@ljv%l)wim0be#awn_4(j%i#bps8(_s@*z3es*2g
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"] if DEBUG else []
 
 
 # Application definition
@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     "profiles",
     "books",
     "loans",
-]
+    "barcodes",
+] + (["django_extensions"] if DEBUG else [])
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

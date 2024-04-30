@@ -4,6 +4,9 @@ TEST_APPS=profiles
 
 .PHONY: dev test lint
 
+hmm:
+	echo $(RUNSERVER_CMD)
+
 dev:
 	@$(MAKE) -f dev.makefile
 
@@ -49,3 +52,17 @@ reset_db:
 	. venv/bin/activate; ./manage.py import_profiles
 	. venv/bin/activate; ./manage.py import_books
 	. venv/bin/activate; ./manage.py shell -c '$(loanscript)'
+
+tmp2 := $(shell mktemp)
+tmp1 := $(shell mktemp)
+
+compare_reqs:
+	cat *requirements.txt | sort > ${tmp1}
+	pip freeze | sort > ${tmp2}
+	git diff --no-index ${tmp1} ${tmp2}
+
+compare_reqs_comm:
+	@cat *requirements.txt | sort > ${tmp1}
+	@pip freeze | sort > ${tmp2}
+	@comm -13 ${tmp1} ${tmp2}
+

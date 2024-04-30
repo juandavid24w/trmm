@@ -9,3 +9,5 @@ static
 *.bak
 .*.swp
 .*.swo
+cert.crt
+cert.key

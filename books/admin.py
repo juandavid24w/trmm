@@ -3,6 +3,7 @@ from django.db import models
 from django.shortcuts import redirect
 from django.utils.translation import gettext_lazy as _
 
+from barcodes.admin import BarcodeSearchBoxAdmin
 from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
 
@@ -49,7 +50,7 @@ class SpecimenInline(admin.TabularInline):
 
 
 @admin.register(Book)
-class BookAdmin(admin.ModelAdmin):
+class BookAdmin(BarcodeSearchBoxAdmin):
     change_form_template = "books/change_form.html"
 
     inlines = [SpecimenInline]

@@ -4,6 +4,8 @@ from django.forms import CheckboxSelectMultiple
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from barcodes.admin import BarcodeSearchBoxAdmin
+
 from .filters import LoanStatusFilter
 from .models import Loan, Period, Renewal
 
@@ -26,7 +28,7 @@ def make_returned(_modeladmin, _request, queryset):
 
 
 @admin.register(Loan)
-class LoanAdmin(admin.ModelAdmin):
+class LoanAdmin(BarcodeSearchBoxAdmin):
     autocomplete_fields = ["specimen", "user"]
     ordering = ["-date"]
     list_display = [
