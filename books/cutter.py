@@ -1,6 +1,7 @@
 # Inspired by Bruno de Sá's https://github.com/bcunhasa/gerador-cutter
 
 import csv
+import re
 import unicodedata
 from bisect import bisect_left
 
@@ -37,4 +38,5 @@ class CutterSingleton:
 
 
 def get(value):
+    value = re.sub(r"[^a-z]", "", normalize(value))
     return CutterSingleton().get(value)

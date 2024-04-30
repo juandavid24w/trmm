@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext as _
 
 from . import cutter
+from .language import ARTICLES
 from .validators import validate_isbn
 
 
@@ -62,22 +63,52 @@ class Book(models.Model):
         on_delete=models.SET_NULL,
         verbose_name=_("Classificação"),
     )
-    code = models.CharField(max_length=20, verbose_name=_("Código"))
+    title_first_letter = models.CharField(
+        max_length=1,
+        verbose_name=_("Primeira letra do título"),
+        help_text=_(
+            "Primeira letra da primeira palavra do título que não é um artigo"
+        ),
+    )
+    code = models.CharField(
+        max_length=50,
+        verbose_name=_("Código parcial do livro"),
+        help_text=_("Código do livro sem o número de exemplar"),
+        null=True,
+    )
+    creation_date = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Data de criação")
+    )
+    last_modified = models.DateTimeField(
+        auto_now=True, verbose_name=_("Última modificação")
+    )
 
     def units(self):
         return self.specimens.count()
 
-    def calc_code(self):
-        return (
-            f"{self.classification.name} {cutter.get(self.author_last_name)} "
-            f"{self.classification.location}"
-        )
+    def calc_title_first_letter(self):
+        words = self.title.split()
+        while words[0].lower() in ARTICLES:
+            del words[0]
+        return words[0][0].lower()
 
+    def calc_code(self):
+        cl = self.classification.name
+        loc = self.classification.location.name
+        cutcode = cutter.get(self.author_last_name)
+        title = self.title_first_letter
+        author = self.author_last_name[0].upper()
+
+        return f"{cl} {author}{cutcode}{title}%s {loc}"
+
+    @property
     def author(self):
         return f"{self.author_first_names} {self.author_last_name}"
 
     def save(self, *args, **kwargs):
-        self.code = self.calc_code()
+        self.title_first_letter = self.calc_title_first_letter()
+        if not self.code:
+            self.code = self.calc_code()
         return super().save(*args, **kwargs)
 
     def __str__(self):
@@ -91,8 +122,8 @@ class Book(models.Model):
 class Specimen(models.Model):
     number = models.IntegerField(
         verbose_name=_("Número"),
-        null=False,
-        validators=[MinValueValidator(1)],
+        default=0,
+        validators=[MinValueValidator(0)],
     )
     book = models.ForeignKey(
         Book,
@@ -101,18 +132,21 @@ class Specimen(models.Model):
         verbose_name=_("Livro"),
         related_name="specimens",
     )
+    code = models.CharField(
+        max_length=50, verbose_name=_("Código"), default="", blank=True
+    )
 
     def __str__(self):
         return f"E{self.number} | {self.book}"
 
-    def __init__(self, *args, **kwargs):
+    def save(self, *args, **kwargs):
         cls = self.__class__
-        if "number" not in kwargs and "book" in kwargs:
-            kwargs["number"] = (
-                cls.objects.filter(book=kwargs["book"]).count() + 1
-            )
+        qs = cls.objects.filter(book=self.book)
+        self.number = max(o.number for o in qs) + 1 if qs else 1
+        if not self.code:
+            self.code = self.book.code % self.number
 
-        super().__init__(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = _("Exemplar")
@@ -120,5 +154,5 @@ class Specimen(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("number", "book"), name="unique specimen number"
-            )
+            ),
         ]
