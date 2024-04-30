@@ -13,7 +13,7 @@ class Profile(models.Model):
         EM2 = "2EM", _("2ª série do ensino médio")
         EM3 = "3EM", _("3ª série do ensino médio")
 
-        __empty__ = _("série desconhecida")
+        __empty__ = None
 
         def next(self, reverse=False):
             cls = self.__class__
@@ -44,7 +44,7 @@ class Profile(models.Model):
         max_length=Grade.max_length(),
         choices=Grade,
         default=Grade.__empty__,
-        blank=True,
+        null=True,
         verbose_name=_("Série"),
     )
 
