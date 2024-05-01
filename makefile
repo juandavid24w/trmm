@@ -44,9 +44,7 @@ endef
 reset_db:
 	rm -f db.sqlite3
 	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
-	. venv/bin/activate; ./manage.py makemigrations books
-	. venv/bin/activate; ./manage.py makemigrations profiles
-	. venv/bin/activate; ./manage.py makemigrations loans
+	. venv/bin/activate; ./manage.py makemigrations books profiles loans dynadmin
 	. venv/bin/activate; ./manage.py migrate
 	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
 	. venv/bin/activate; ./manage.py import_profiles

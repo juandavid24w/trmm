@@ -31,17 +31,19 @@ ALLOWED_HOSTS = ["*"] if DEBUG else []
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
+    "biblioteca.apps.BibliotecaAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "fieldsets_with_inlines",
+    "solo",
     "profiles",
     "books",
     "loans",
     "barcodes",
+    "dynadmin",
 ] + (["django_extensions"] if DEBUG else [])
 
 
