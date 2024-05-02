@@ -5,6 +5,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Count, DurationField, F, Q, Sum
 from django.db.models.functions import Cast
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from books.models import Specimen
@@ -34,10 +35,17 @@ class Renewal(models.Model):
     days = models.IntegerField(
         verbose_name=_("Número de dias"), validators=[MinValueValidator(0)]
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False,
+        verbose_name=_("Ordem"),
+    )
 
     class Meta:
         verbose_name = _("Renovação")
         verbose_name_plural = _("Renovações")
+        ordering = ["order"]
 
     def __str__(self):
         return _("%s (%s dias)") % (self.description, self.days)
@@ -94,9 +102,37 @@ class Loan(models.Model):
     )
 
     def clean(self):
-        # pytlint: disable-next=no-member # available is manager's annotation
-        if not self.specimen.available:
+        if self._state.adding and not self.specimen.available:
             raise ValidationError(_("Exemplar já está alugado"))
+
+    def renew(self):
+        renewals = list(self.renewals.all())
+        n = len(renewals)
+
+        # Disallow renewing if next renewal isn't due yet
+        if n > 0:
+            days = self.duration.days + sum(r.days for r in renewals[:-1])
+            if timezone.now() < self.date + timedelta(days=days):
+                return _("última renovação ainda não começou")
+
+        last_order = renewals[n - 1].order if n > 0 else -1
+        nxt = Renewal.objects.filter(order__gt=last_order).first()
+
+        if not nxt:
+            return _("já fez todas as renovações possíveis")
+
+        self.renewals.add(nxt)
+
+        return None
+
+    def unrenew(self):
+        renewal = self.renewals.all().last()
+        if not renewal:
+            return _("não há renovações para serem retiradas")
+
+        self.renewals.remove(renewal)
+        return None
+
 
     class Meta:
         verbose_name = _("Empréstimo")

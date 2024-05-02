@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "fieldsets_with_inlines",
     "solo",
+    "adminsortable2",
     "profiles",
     "books",
     "loans",

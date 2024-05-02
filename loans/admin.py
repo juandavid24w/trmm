@@ -1,10 +1,14 @@
-from django.contrib import admin
+from adminsortable2.admin import SortableAdminMixin
+from django.contrib import admin, messages
 from django.db import models
 from django.forms import CheckboxSelectMultiple
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from barcodes.admin import BarcodeSearchBoxAdmin
+from admin_buttons.admin import AdminButtonsMixin
+from barcodes.admin import BarcodeSearchBoxMixin
 
 from .filters import LoanStatusFilter
 from .models import Loan, Period, Renewal
@@ -16,7 +20,7 @@ class PeriodAdmin(admin.ModelAdmin):
 
 
 @admin.register(Renewal)
-class RenewalAdmin(PeriodAdmin):
+class RenewalAdmin(SortableAdminMixin, admin.ModelAdmin):
     list_display = ["description", "days"]
 
 
@@ -28,9 +32,10 @@ def make_returned(_modeladmin, _request, queryset):
 
 
 @admin.register(Loan)
-class LoanAdmin(BarcodeSearchBoxAdmin):
+class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     autocomplete_fields = ["specimen", "user"]
     ordering = ["-date"]
+    readonly_fields = ["renewals", "due"]
     list_display = [
         "user",
         "title",
@@ -62,7 +67,7 @@ class LoanAdmin(BarcodeSearchBoxAdmin):
 
     @admin.display(description=_("Vencimento"))
     def due(self, obj):
-        return obj.due
+        return obj.due.strftime("%d/%m/%Y, %H:%M")
 
     @admin.display(description=_("Título"), ordering="specimen__book__title")
     def title(self, obj):
@@ -116,3 +121,92 @@ class LoanAdmin(BarcodeSearchBoxAdmin):
         ):
             return qs
         return qs.filter(user__user=request.user)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path(
+                "renew/<int:obj_or_id>",
+                self.admin_site.admin_view(self.renew_view),
+                name="loans_loan_renew",
+            )
+        ]
+        return my_urls + urls
+
+    def change_view(self, request, object_id, *args, form_url="", **kwargs):
+        if not request.user.has_perm("loans.change_loan"):
+            form_url = reverse("admin:loans_loan_renew", args=(object_id,))
+
+        return super().change_view(
+            request,
+            object_id,
+            *args,
+            form_url=form_url,
+            **kwargs,
+        )
+
+    def renew_view(self, request, obj_or_id):
+        """renew_view can be called from two places:
+        * coming from a user with change permission, it is called by
+          admin_button's response_change (see admin_buttons_config). In
+          this case, this view receives the object itself
+        * Otherwise, a custom form_url (the form action) is set to the
+          change form, which is associated with this view (see get_urls).
+          In this case, this view receives the object's id
+        """
+
+        if isinstance(obj_or_id, int):
+            obj = get_object_or_404(Loan, pk=obj_or_id)
+        else:
+            obj = obj_or_id
+
+        message = _("Não foi possível renovar: %s")
+
+        if (
+            not request.user.has_perm("loans.change_loan")
+            and request.user != obj.user.user
+        ):
+            messages.error(
+                request,
+                message % _("usuário não bate com usuário do empréstimo"),
+            )
+        elif obj.return_date:
+            messages.error(request, message % _("exemplar já foi devolvido"))
+        elif obj.due < timezone.now():
+            messages.error(request, message % _("exemplar já está atrasado"))
+        else:
+            if msg := obj.renew():
+                messages.error(request, message % msg)
+
+        return redirect(request.META["HTTP_REFERER"])
+
+    def unrenew_view(self, request, obj):
+        message = _("Não foi possível remover renovação: %s")
+
+        if not request.user.has_perm("loans.change_loan"):
+            messages.error(
+                request,
+                message % _("usuário não tem permissão"),
+            )
+        else:
+            if msg := obj.unrenew():
+                messages.error(request, message % msg)
+
+        return redirect(request.META["HTTP_REFERER"])
+
+    admin_buttons_config = [
+        {
+            "name": "_renew",
+            "label": _("Renovar"),
+            "method": "renew_view",
+        },
+        {
+            "name": "_unrenew",
+            "label": _("Remover renovação"),
+            "method": "unrenew_view",
+            "condition": lambda req, ctx: req.user.has_perm(
+                "loans.change_loan"
+            ),
+            "use_separator": False,
+        },
+    ]
