@@ -1,13 +1,18 @@
 from django.contrib import admin
 from django.db import models
 from django.shortcuts import redirect
+from django.utils.functional import lazy
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
-from barcodes.admin import BarcodeSearchBoxAdmin
+from admin_buttons.admin import AdminButtonsMixin
+from barcodes.admin import BarcodeSearchBoxMixin
 from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
 
 from .models import Book, Classification, Location, Specimen
+
+mark_safe_lazy = lazy(mark_safe, str)
 
 
 def custom_title_filter_factory(title):
@@ -50,9 +55,7 @@ class SpecimenInline(admin.TabularInline):
 
 
 @admin.register(Book)
-class BookAdmin(BarcodeSearchBoxAdmin):
-    change_form_template = "books/change_form.html"
-
+class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     inlines = [SpecimenInline]
     fields = [
         "isbn",
@@ -119,22 +122,28 @@ class BookAdmin(BarcodeSearchBoxAdmin):
         qs = qs.annotate(models.Count("specimens"))
         return qs
 
-    def add_specimen(self, request, obj, n):
+    admin_buttons_config = [
+        {
+            "name": "_addspecimen",
+            "method": "add_specimen",
+            "label": _("Adicionar exemplares"),
+            "condition": lambda req, ctx: req.user.has_perm(
+                "book.add_specimen"
+            ),
+            "extra_html": mark_safe_lazy(
+                '<input type="number" step=1 min=1 max=99 value=1 '
+                + f"name=\"n_specimens\" aria-label=\"{_('Número de exemplares')}\">"
+            ),
+        }
+    ]
+
+    def add_specimen(self, request, obj):
+        n = int(request.POST["n_specimens"])
         if obj:
             for _ in range(n):
                 obj.specimens.create()
 
         return redirect(request.META["HTTP_REFERER"])
-
-    def response_change(self, request, obj, *args, **kwargs):
-        if "_addspecimen" in request.POST:
-            n = int(request.POST["n_specimens"])
-            return self.add_specimen(request, obj, n)
-
-        return super().response_change(request, obj, *args, **kwargs)
-
-    class Media:
-        css = {"all": ["books/custom_submit_row.css"]}
 
 
 @admin.register(Classification)

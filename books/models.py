@@ -124,14 +124,14 @@ class Book(models.Model):
 
 # pylint: disable-next=too-few-public-methods
 class SpecimenManager(models.Manager):
-    """Annotate if specimen is available (`available`)"""
+    """Annotate if specimen is available (`_available`)"""
 
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
         count_returned = Count(
             "loans", filter=Q(loans__return_date__lt=timezone.now())
         )
-        qs = qs.annotate(available=Exact(count_returned, Count("loans")))
+        qs = qs.annotate(_available=Exact(count_returned, Count("loans")))
 
         return qs
 
@@ -153,6 +153,15 @@ class Specimen(models.Model):
     code = models.CharField(
         max_length=50, verbose_name=_("Código"), default="", blank=True
     )
+
+    @property
+    def available(self):
+        if hasattr(self, "_available"):
+            return self._available
+
+        returned_loans = self.loans.filter(return_date__lt=timezone.now())
+        all_loans = self.loans.all()
+        return all_loans.count() == returned_loans.count()
 
     def __str__(self):
         return f"E{self.number} | {self.book}"

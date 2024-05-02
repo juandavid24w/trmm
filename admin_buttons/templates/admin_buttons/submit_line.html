@@ -10,14 +10,15 @@
     <a href="{% add_preserved_filters changelist_url %}" class="closelink">{% translate 'Close' %}</a>
 {% endif %}
 {% endblock %}
-{% if perms.book.add_specimen %}
-<hr>
-<span class="n-specimens-wrapper">
-  <input type="submit" value="{% translate 'Adicionar exemplares' %}" name="_addspecimen">
-  <input type="number" step=1 min=1 max=99 value=1
-         name="n_specimens" aria-label="{% translate 'Número de exemplares' %}">
-</span>
-{% endif %}
+{% for opts in admin_buttons_config %}
+  {% if opts.condition %}
+    {% if opts.use_separator %}<hr>{% endif %}
+    <span class="admin-buttons-wrapper">
+      <input type="submit" value="{{ opts.label }}" name="{{ opts.name }}">
+      {{ opts.extra_html }}
+    </span>
+  {% endif %}
+{% endfor %}
 {% block add_specimens %}
 {% endblock %}
 {% if show_delete_link and original %}
