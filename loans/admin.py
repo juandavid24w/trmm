@@ -45,6 +45,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         "short_due",
         "short_return_date",
         "n_renovations",
+        "late",
     ]
     list_filter = [
         LoanStatusFilter,
@@ -102,6 +103,10 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     )
     def n_renovations(self, obj):
         return obj.renewals__count
+
+    @admin.display(description=_("atrasado"), boolean=True)
+    def late(self, obj):
+        return not obj.return_date and obj.due < timezone.now()
 
     def get_changeform_initial_data(self, request):
         from_qs = super().get_changeform_initial_data(request)
