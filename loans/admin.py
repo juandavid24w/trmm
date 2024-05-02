@@ -107,3 +107,12 @@ class LoanAdmin(BarcodeSearchBoxAdmin):
 
         defaults.update(from_qs)
         return defaults
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser or (
+            request.user.has_perm("loans.change_loan")
+            and request.user.has_perm("loans.add_loan")
+        ):
+            return qs
+        return qs.filter(user__user=request.user)
