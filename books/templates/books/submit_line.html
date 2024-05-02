@@ -10,12 +10,14 @@
     <a href="{% add_preserved_filters changelist_url %}" class="closelink">{% translate 'Close' %}</a>
 {% endif %}
 {% endblock %}
+{% if perms.book.add_specimen %}
 <hr>
 <span class="n-specimens-wrapper">
   <input type="submit" value="{% translate 'Adicionar exemplares' %}" name="_addspecimen">
   <input type="number" step=1 min=1 max=99 value=1
          name="n_specimens" aria-label="{% translate 'Número de exemplares' %}">
 </span>
+{% endif %}
 {% block add_specimens %}
 {% endblock %}
 {% if show_delete_link and original %}
