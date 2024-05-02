@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from fieldsets_with_inlines import FieldsetsInlineMixin
 
@@ -29,6 +31,13 @@ class EmailInline(admin.TabularInline):
 @admin.register(Profile)
 class ProfileAdmin(HiddenAdminMixin, admin.ModelAdmin):
     search_fields = ["user__first_name", "user__last_name", "grade"]
+
+    def change_view(self, request, object_id, *args, **kwargs):
+        obj = get_object_or_404(Profile, pk=object_id)
+
+        return redirect(
+            reverse("admin:auth_user_change", args=(obj.user.pk,))
+        )
 
 
 class ProfileInline(admin.TabularInline):

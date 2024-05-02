@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db import models
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -26,6 +27,13 @@ def custom_title_filter_factory(title):
 
 @admin.register(Specimen)
 class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
+    def change_view(self, request, object_id, *args, **kwargs):
+        obj = get_object_or_404(Specimen, pk=object_id)
+
+        return redirect(
+            reverse("admin:books_book_change", args=(obj.book.pk,))
+        )
+
     search_fields = [
         "book__isbn",
         "book__title",
