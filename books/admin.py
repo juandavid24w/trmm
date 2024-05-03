@@ -136,7 +136,7 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             "method": "add_specimen",
             "label": _("Adicionar exemplares"),
             "condition": lambda req, ctx: req.user.has_perm(
-                "book.add_specimen"
+                "books.add_specimen"
             ),
             "extra_html": mark_safe_lazy(
                 '<input type="number" step=1 min=1 max=99 value=1 '

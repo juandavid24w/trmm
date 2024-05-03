@@ -97,7 +97,7 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
 
     @admin.display(description=_("Moderador"), boolean=True)
     def is_moderator(self, obj):
-        return obj.has_perm("book.add")
+        return obj.has_perm("loans.add_loan")
 
     class Media:
         css = {"all": ["profiles/style.css"]}
