@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -9,7 +10,6 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from books.models import Specimen
-from profiles.models import Profile
 
 
 class Period(models.Model):
@@ -27,7 +27,7 @@ class Period(models.Model):
 
     @classmethod
     def get_default(cls):
-        return cls.objects.all()[0]
+        return cls.objects.all().first()
 
 
 class Renewal(models.Model):
@@ -92,7 +92,9 @@ class Loan(models.Model):
     )
     date = models.DateTimeField(verbose_name=_("Data do empréstimo"))
     user = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, verbose_name=_("Usuário")
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name=_("Usuário"),
     )
     return_date = models.DateTimeField(
         verbose_name=_("Data de devolução"),
@@ -102,7 +104,11 @@ class Loan(models.Model):
     )
 
     def clean(self):
-        if self._state.adding and not self.specimen.available:
+        if (
+            self._state.adding
+            and self.specimen
+            and not self.specimen.available
+        ):
             raise ValidationError(_("Exemplar já está alugado"))
 
     def renew(self):
@@ -139,4 +145,4 @@ class Loan(models.Model):
         verbose_name_plural = _("Empréstimos")
 
     def __str__(self):
-        return _("Empréstimo de %s") % self.user
+        return _("Empréstimo de %s") % self.user.profile

@@ -53,8 +53,8 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         ("user", admin.RelatedOnlyFieldListFilter),
     ]
     search_fields = [
-        "user__user__first_name",
-        "user__user__last_name",
+        "user__first_name",
+        "user__last_name",
         "specimen__book__title",
         "specimen__book__author_first_names",
         "specimen__book__author_last_name",
@@ -110,9 +110,10 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
     def get_changeform_initial_data(self, request):
         from_qs = super().get_changeform_initial_data(request)
+        period = Period.get_default()
         defaults = {
             "date": timezone.now(),
-            "duration": Period.get_default(),
+            **({"duration": period} if period else {}),
         }
 
         defaults.update(from_qs)
@@ -125,7 +126,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             and request.user.has_perm("loans.add_loan")
         ):
             return qs
-        return qs.filter(user__user=request.user)
+        return qs.filter(user=request.user)
 
     def get_urls(self):
         urls = super().get_urls()
@@ -169,7 +170,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
         if (
             not request.user.has_perm("loans.change_loan")
-            and request.user != obj.user.user
+            and request.user != obj.user
         ):
             messages.error(
                 request,
