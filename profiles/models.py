@@ -48,13 +48,6 @@ class Profile(models.Model):
         verbose_name=_("Série"),
     )
 
-    def save(self, *args, **kwargs):
-        if not self.user.is_staff:
-            self.user.is_staff = True
-            self.user.save()
-
-        super().save(*args, **kwargs)
-
     class Meta:
         verbose_name = _("Perfil")
         verbose_name_plural = _("Perfis")
