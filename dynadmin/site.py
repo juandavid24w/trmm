@@ -13,7 +13,10 @@ class DynamicAdminMixin:
                 "Make sure to mix DynamicAdminMixin with admin.AdminSite"
             ) from e
 
-        conf = SiteConfiguration.objects.get()
+        try:
+            conf = SiteConfiguration.objects.get()
+        except SiteConfiguration.DoesNotExist:
+            return context
         values = {
             k: v for k, v in model_to_dict(conf).items() if v and k != "id"
         }
