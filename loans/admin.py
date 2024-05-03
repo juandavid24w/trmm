@@ -3,8 +3,10 @@ from django.contrib import admin, messages
 from django.db import models
 from django.forms import CheckboxSelectMultiple
 from django.shortcuts import get_object_or_404, redirect
+from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from admin_buttons.admin import AdminButtonsMixin
@@ -104,9 +106,13 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     def n_renovations(self, obj):
         return obj.renewals__count
 
-    @admin.display(description=_("atrasado"), boolean=True)
+    @admin.display(description=_("atrasado"))
     def late(self, obj):
-        return not obj.return_date and obj.due < timezone.now()
+        href = static("loans/img/late.svg")
+
+        if not obj.return_date and obj.due < timezone.now():
+            return mark_safe(f'<img src="{href}">')
+        return ""
 
     def get_changeform_initial_data(self, request):
         from_qs = super().get_changeform_initial_data(request)
