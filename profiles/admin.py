@@ -69,8 +69,9 @@ def make_return_grade(_modeladmin, _request, queryset):
 
 @admin.register(User)
 class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
-    list_display = list(BaseUserAdmin.list_display)
+    list_display = [x for x in BaseUserAdmin.list_display if x != "is_staff"]
     list_display.insert(-1, "profile_grade")
+    list_display.append("is_moderator")
     fieldsets_with_inlines = list(BaseUserAdmin.fieldsets)
     fieldsets_with_inlines[2:2] = [
         (_("Empréstimo"), {"fields": ("loan",), "classes": ["hide-label"]}),
@@ -93,6 +94,10 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
     @admin.display(description=_("Série"))
     def profile_grade(self, obj):
         return obj.profile.grade
+
+    @admin.display(description=_("Moderador"), boolean=True)
+    def is_moderator(self, obj):
+        return obj.has_perm("book.add")
 
     class Media:
         css = {"all": ["profiles/style.css"]}
