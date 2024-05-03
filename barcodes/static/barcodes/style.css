@@ -1,0 +1,35 @@
+#changelist-search .barcode-icon {
+  height: 100%;
+  padding: 0;
+  margin: 0 4px;
+}
+
+.barcode-video-wrapper button,
+.barcode-button {
+  cursor: pointer;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  background: var(--body-bg);
+  border-radius: 4px;
+  box-shadow: 0 -15px 20px -10px rgba(0, 0, 0, 0.15) inset;
+}
+
+.barcode-video-wrapper {
+  position: absolute;
+  display: none;
+  width: fit-content;
+  margin-inline: auto;
+  background: var(--body-bg);
+  flex-direction: column;
+  max-width: 90%;
+}
+
+.barcode-video-wrapper button {
+  margin-bottom: 8px;
+  align-self: flex-end;
+  min-width: 100px;
+}
+
+.barcode-video {
+  border-radius: 4px;
+}

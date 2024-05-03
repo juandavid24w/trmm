@@ -1,0 +1,22 @@
+.submit-row input[type="number"] {
+  background: var(--body-bg);
+  color: var(--body-fg);
+  height: unset;
+}
+
+.submit-row hr {
+  border-left: 1px solid var(--border-color);
+  height: unset;
+  width: 0;
+}
+
+.submit-row .closelink.button-like-a {
+  background: var(--button-bg);
+  color: var(--button-fg);
+}
+
+@media (max-width: 1200px) {
+  .submit-row hr {
+    display: none;
+  }
+}
