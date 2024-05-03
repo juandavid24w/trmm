@@ -1,7 +1,6 @@
 import pandas as pd
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 
@@ -65,9 +64,6 @@ class Command(BaseCommand):
                 profile = Profile(user=user, grade=grade)
                 user.save()
                 profile.save()
-
-                group, _ = Group.objects.get_or_create(name="Estudantes")
-                user.groups.add(group)
 
                 for email in additional_emails:
                     user.additional_emails.create(email=email)
