@@ -58,9 +58,9 @@ class Command(BaseCommand):
                     first_name=names[0],
                     last_name=" ".join(names[1:]),
                     email=email,
-                    password=password,
                 )
 
+                user.set_password(password)
                 profile = Profile(user=user, grade=grade)
                 user.save()
                 profile.save()
