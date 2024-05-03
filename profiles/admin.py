@@ -80,6 +80,13 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
     readonly_fields = ["loan"]
     actions = [*BaseUserAdmin.actions, make_advance_grade, make_return_grade]
 
+    def get_fieldsets(self, request, obj=None, *args, **kwargs):
+        fs = super().get_fieldsets(request, obj, *args, **kwargs)
+        if not obj:
+            fs = fs[:2] + fs[3:]
+
+        return fs
+
     def loan(self, obj):
         return loan_link({"user": obj.profile.pk}, _("Fazer empréstimo"))
 
