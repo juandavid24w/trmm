@@ -114,6 +114,10 @@ class Book(models.Model):
             self.code = self.calc_code()
         return super().save(*args, **kwargs)
 
+    @property
+    def available(self):
+        return self.specimens.filter(_available=True).exists()
+
     def __str__(self):
         return f"{self.title}"
 

@@ -1,0 +1,17 @@
+{% extends "admin/index.html" %}
+{% load i18n %}
+
+{% block sidebar %}{% endblock %}
+{% block content_title %}<br>{% endblock %}
+{% block usertools %}
+<span>
+{% if login_url %}
+<a href="{{ login_url}}">{% translate 'Fazer login' %}</a>
+{% endif %}
+{% include "admin/color_theme_toggle.html" %}
+</span>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name"><a href="">{{ site_header|default:_('Django administration') }}</a></div>
+{% endblock %}

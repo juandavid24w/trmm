@@ -8,8 +8,10 @@ from django.utils.translation import gettext_lazy as _
 
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
+from biblioteca.admin import public_site
 from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
+from public_admin.admin import PublicModelAdminMixin
 
 from .models import Book, Classification, Location, Specimen
 
@@ -25,7 +27,6 @@ def custom_title_filter_factory(title):
     return Wrapper
 
 
-@admin.register(Specimen)
 class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
     def change_view(self, request, object_id, *args, **kwargs):
         obj = get_object_or_404(Specimen, pk=object_id)
@@ -62,7 +63,6 @@ class SpecimenInline(admin.TabularInline):
         return obj.available
 
 
-@admin.register(Book)
 class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     inlines = [SpecimenInline]
     fields = [
@@ -75,8 +75,9 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         "creation_date",
         "last_modified",
         "units",
+        "available",
     ]
-    readonly_fields = ["units", "creation_date", "last_modified"]
+    readonly_fields = ["units", "creation_date", "last_modified", "available"]
     search_fields = (
         "isbn",
         "title",
@@ -125,6 +126,10 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     def short_last_modified(self, obj):
         return obj.last_modified.strftime("%d/%m/%y")
 
+    @admin.display(description=_("Disponível"), boolean=True)
+    def available(self, obj):
+        return obj.available
+
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
         qs = qs.annotate(models.Count("specimens"))
@@ -154,11 +159,31 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         return redirect(request.META["HTTP_REFERER"])
 
 
-@admin.register(Classification)
 class ClassificationAdmin(admin.ModelAdmin):
     list_display = ("name", "full_name", "location")
 
 
-@admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     pass
+
+
+class PublicBookAdmin(PublicModelAdminMixin, BookAdmin):
+    pass
+
+
+class PublicClassificationAdmin(PublicModelAdminMixin, ClassificationAdmin):
+    pass
+
+
+class PublicLocationAdmin(PublicModelAdminMixin, LocationAdmin):
+    pass
+
+
+admin.site.register(Specimen, SpecimenAdmin)
+admin.site.register(Book, BookAdmin)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(Classification, ClassificationAdmin)
+
+public_site.register(Book, PublicBookAdmin)
+public_site.register(Location, PublicLocationAdmin)
+public_site.register(Classification, PublicClassificationAdmin)
