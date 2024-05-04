@@ -4,6 +4,12 @@ class PublicAdminSiteMixin:
     def has_permission(self, request):
         return True
 
+    def each_context(self, request, *args, **kwargs):
+        context = super().each_context(request, *args, **kwargs) or {}
+        context["is_public_admin"] = True
+
+        return context
+
 
 class PublicModelAdminMixin:
     def get_model_perms(self, request, *args, **kwargs):

@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["*"] if DEBUG else []
 # Application definition
 
 INSTALLED_APPS = [
+    "public_admin",
     "biblioteca.apps.BibliotecaAdminConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -46,7 +47,6 @@ INSTALLED_APPS = [
     "barcodes",
     "dynamic_admin_site",
     "admin_buttons",
-    "public_admin",
     "site_configuration",
 ] + (["django_extensions"] if DEBUG else [])
 
@@ -66,7 +66,7 @@ ROOT_URLCONF = "biblioteca.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

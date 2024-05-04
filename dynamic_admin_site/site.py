@@ -4,9 +4,9 @@ from django.forms.models import model_to_dict
 
 # pylint: disable-next=too-few-public-methods
 class DynamicAdminMixin:
-    def each_context(self, *args, **kwargs):
+    def each_context(self, request, *args, **kwargs):
         try:
-            context = super().each_context(*args, **kwargs)
+            context = super().each_context(request, *args, **kwargs)
         except AttributeError as e:
             raise AttributeError(
                 "Make sure to mix DynamicAdminMixin with admin.AdminSite"

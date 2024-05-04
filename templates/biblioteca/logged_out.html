@@ -1,0 +1,14 @@
+{% extends "registration/logged_out.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if goodbye_msg %}
+<p>{{ goodbye_msg }}</p>
+{% endif %}
+
+<p><br></p>
+<p><a href="{% url 'public_admin:index' %}">{% translate 'Ir para página principal' %}</a></p>
+<p><a href="{% url 'admin:index' %}">{% translate 'Acessar novamente' %}</a></p>
+
+
+{% endblock %}
