@@ -70,7 +70,7 @@ modgroup.permissions.add(Permission.objects.get(codename="view_period"))
 modgroup.permissions.add(Permission.objects.get(codename="view_renewal"))
 try:
 	sc = SiteConfiguration.objects.get()
-	sc.site_title = "Biblioteca da Arco",
+	sc.site_title = "Biblioteca da Arco"
 	sc.site_header="Biblioteca da Arco"
 	sc.index_title="Administração"
 	sc.save()
@@ -88,13 +88,15 @@ setupscript := ./manage.py	shell -c "$$setupscriptbody"
 reset_db:
 	rm -f db.sqlite3
 	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
+	rm -rf site_configuration/migrations/*
 	. venv/bin/activate; ./manage.py makemigrations books profiles loans
+	. venv/bin/activate; ./manage.py makemigrations site_configuration
+	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore
 	. venv/bin/activate; ./manage.py migrate
 	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
 	. venv/bin/activate; ./manage.py import_profiles
-	. venv/bin/activate; ./manage.py import_books
 	. venv/bin/activate; $(setupscript)
-	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore
+	. venv/bin/activate; ./manage.py import_books
 
 tmp2 := $(shell mktemp)
 tmp1 := $(shell mktemp)
