@@ -94,6 +94,7 @@ reset_db:
 	. venv/bin/activate; ./manage.py import_profiles
 	. venv/bin/activate; ./manage.py import_books
 	. venv/bin/activate; $(setupscript)
+	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore
 
 tmp2 := $(shell mktemp)
 tmp1 := $(shell mktemp)
