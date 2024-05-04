@@ -23,6 +23,7 @@ lint:
 			| cat - <(git diff --cached --name-only) \
 			| cat - <(git ls-files --other --exclude-standard) \
 			| egrep '.py$$' \
+			| egrep -v 'migrations/.*py$$' \
 		); \
 		if [ -n "$$files" ]; then \
 			darker $$files \
