@@ -42,6 +42,7 @@ class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
         "book__author_first_names",
         "book__publisher",
         "book__classification__name",
+        "book__classification__abbreviation",
     ]
 
 
@@ -85,6 +86,7 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         "author_first_names",
         "publisher",
         "classification__name",
+        "classification__abbreviation",
     )
     list_display = (
         "title",
@@ -97,7 +99,7 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     )
     list_filter = (
         (
-            "classification__name",
+            "classification__abbreviation",
             custom_title_filter_factory(_("classificação")),
         ),
         (
@@ -160,7 +162,7 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
 
 class ClassificationAdmin(admin.ModelAdmin):
-    list_display = ("name", "full_name", "location")
+    list_display = ("__str__", "abbreviation", "location")
 
 
 class LocationAdmin(admin.ModelAdmin):

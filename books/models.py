@@ -24,20 +24,18 @@ class Location(models.Model):
 
 
 class Classification(models.Model):
-    name = models.CharField(
-        primary_key=True, max_length=20, verbose_name=_("Nome")
+    abbreviation = models.CharField(
+        primary_key=True, max_length=20, verbose_name=_("Abreviação")
     )
-    full_name = models.CharField(
-        max_length=80, verbose_name=_("Nome por extenso"), blank=True
-    )
+    name = models.CharField(max_length=80, verbose_name=_("Nome"), blank=True)
     location = models.ForeignKey(
         Location, on_delete=models.CASCADE, verbose_name=_("Localização")
     )
 
     def __str__(self):
-        if self.full_name:
-            return self.full_name
-        return self.name
+        if self.name:
+            return self.name
+        return self.abbreviation
 
     class Meta:
         verbose_name = _("Classificação")

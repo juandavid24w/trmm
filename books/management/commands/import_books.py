@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 name=row["localizacao"].strip().title()
             )
             classification, _ = Classification.objects.get_or_create(
-                name=row["busca"].strip().title(),
+                abbreviation=row["busca"].strip().title(),
                 location=location,
             )
 
