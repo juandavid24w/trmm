@@ -18,6 +18,9 @@ class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
     def each_context(self, request, *args, **kwargs):
         context = super().each_context(request, *args, **kwargs) or {}
 
+        cls = self.site_configuration_model
+        context["site_header"] = cls.get_solo().administration_header
+
         if request.path == reverse("admin:logout"):
             try:
                 context["goodbye_msg"] = (
