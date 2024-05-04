@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "dynamic_admin_site",
     "admin_buttons",
     "site_configuration",
+    "tinymce",
 ] + (["django_extensions"] if DEBUG else [])
 
 
@@ -135,5 +136,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+TINYMCE_JS_URL = (
+    "https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
+)

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
+from tinymce.models import HTMLField
 
 from dynamic_admin_site.models import site_configuration_factory
 
@@ -10,12 +11,12 @@ SiteConfigurationModel = site_configuration_factory(
 
 
 class SiteConfiguration(SiteConfigurationModel):
-    welcome_msg = models.TextField(
+    welcome_msg = HTMLField(
         null=True,
         blank=True,
         verbose_name=_("Mensagem de boas vindas"),
     )
-    goodbye_msg = models.TextField(
+    goodbye_msg = HTMLField(
         null=True,
         blank=True,
         verbose_name=_("Mensagem de despedida"),

@@ -12,7 +12,6 @@ class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
     site_header = _("Biblioteca")
     index_title = _("Administração")
 
-    logout_template = "biblioteca/logged_out.html"
     site_configuration_model = SiteConfiguration
 
     def each_context(self, request, *args, **kwargs):

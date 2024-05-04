@@ -2,7 +2,7 @@
 
 {% block content_title %}
 {% if is_public_admin and welcome_msg %}
-<p>{{ welcome_msg }}</p>
+<p>{{ welcome_msg|safe }}</p>
 <br>
 {% endif %}
 {% endblock %}
