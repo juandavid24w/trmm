@@ -47,8 +47,8 @@ class Book(models.Model):
         max_length=13,
         validators=[validate_isbn],
         verbose_name=_("ISBN"),
-        primary_key=True,
-        null=False,
+        null=True,
+        blank=False,
     )
     title = models.TextField(verbose_name=_("Título"))
     author_first_names = models.CharField(
@@ -122,6 +122,9 @@ class Book(models.Model):
     class Meta:
         verbose_name = _("Livro")
         verbose_name_plural = _("Livros")
+        constraints = [
+            models.UniqueConstraint(fields=("isbn",), name="unique isbn"),
+        ]
 
 
 # pylint: disable-next=too-few-public-methods
