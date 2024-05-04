@@ -2,11 +2,13 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from dynadmin.site import DynamicAdminMixin
+from dynamic_admin_site.site import DynamicAdminMixin
 from public_admin.admin import PublicAdminSiteMixin
+from site_configuration.models import SiteConfiguration
 
 
 class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
+    site_configuration_model = SiteConfiguration
     site_title = _("Biblioteca")
     site_header = _("Biblioteca")
     index_title = _("Administração")
@@ -18,6 +20,7 @@ class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
 class PublicBibliotecaAdminSite(
     DynamicAdminMixin, PublicAdminSiteMixin, admin.AdminSite
 ):
+    site_configuration_model = SiteConfiguration
     site_title = _("Biblioteca Pública")
     site_header = _("Biblioteca Pública")
     index_title = _("Administração")

@@ -36,7 +36,7 @@ lint:
 define setupscriptbody
 from loans.models import Period, Renewal
 from django.contrib.auth.models import User, Group, Permission
-from dynadmin.models import SiteConfiguration
+from site_configuration.models import SiteConfiguration
 Period(description="Acervo fixo", days=15).save()
 Period(description="Acervo móvel", days=30).save()
 Renewal(description="Primeira renovação", days=15).save()
@@ -88,8 +88,7 @@ setupscript := ./manage.py	shell -c "$$setupscriptbody"
 reset_db:
 	rm -f db.sqlite3
 	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
-	rm -rf dynadmin/migrations/*
-	. venv/bin/activate; ./manage.py makemigrations books profiles loans dynadmin
+	. venv/bin/activate; ./manage.py makemigrations books profiles loans
 	. venv/bin/activate; ./manage.py migrate
 	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
 	. venv/bin/activate; ./manage.py import_profiles

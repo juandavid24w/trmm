@@ -44,9 +44,10 @@ INSTALLED_APPS = [
     "books",
     "loans",
     "barcodes",
-    "dynadmin",
+    "dynamic_admin_site",
     "admin_buttons",
     "public_admin",
+    "site_configuration",
 ] + (["django_extensions"] if DEBUG else [])
 
 
