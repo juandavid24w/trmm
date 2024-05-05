@@ -70,6 +70,9 @@ class Email(models.Model):
         related_name="additional_emails",
     )
 
+    def __str__(self):
+        return self.email
+
     class Meta:
         verbose_name = _("Email adicional")
         verbose_name_plural = _("Emails adicionais")
