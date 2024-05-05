@@ -179,16 +179,18 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
     def add_view(self, request, form_url="", extra_context=None):
         if ISBNSearchInput.isbn_search_submit_name in request.POST:
-            results, msgs = isbn.search(request.POST["isbn"])
+            isbn_value = request.POST["isbn"]
+            results, msgs = isbn.search(isbn_value)
             href = reverse("admin:books_book_add")
 
             if not results:
                 for msg in msgs:
                     messages.error(request, msg)
-                return redirect(href)
+                results = {"isbn": isbn_value}
+            else:
+                for msg in msgs:
+                    messages.success(request, msg)
 
-            for msg in msgs:
-                messages.success(request, msg)
             get_params = urllib.parse.urlencode(results)
             return redirect(f"{href}?{get_params}")
 

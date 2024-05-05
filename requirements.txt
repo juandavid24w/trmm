@@ -11,3 +11,4 @@ django-solo==2.2.0
 django-admin-sortable2==2.1.10
 django_fieldsets_with_inlines @ git+https://github.com/joaoseckler/django-fieldsets-with-inlines/@b6082ab70e20bc546c87cd9e7c41be684db61dc1
 django-tinymce==4.0.0
+isbnlib==3.10.14
