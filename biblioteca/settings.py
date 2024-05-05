@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from os import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -19,13 +20,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-(j=u)7ztio@ljv%l)wim0be#awn_4(j%i#bps8(_s@*z3es*2g"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(int(environ.get("DEBUG", 1)))
 
-ALLOWED_HOSTS = ["*"] if DEBUG else []
+ALLOWED_HOSTS = ["*"] if DEBUG else environ.get("ALLOWED_HOSTS", "").split()
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = (
+    "django-insecure-(j=u)7ztio@ljv%l)wim0be#awn_4(j%i#bps8(_s@*z3es*2g"
+    if DEBUG
+    else environ.get("SECRET_KEY", "localhost")
+)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = (
+    "django-insecure-(j=u)7ztio@ljv%l)wim0be#awn_4(j%i#bps8(_s@*z3es*2g"
+)
+
+
+CSRF_TRUSTED_ORIGINS = environ.get("CSRF_TRUSTED_ORIGINS", "").split()
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
 
 
 # Application definition
@@ -95,11 +111,14 @@ WSGI_APPLICATION = "biblioteca.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
+        "USER": environ.get("SQL_USER", "user"),
+        "PASSWORD": environ.get("SQL_PASSWORD", "password"),
+        "HOST": environ.get("SQL_HOST", "localhost"),
+        "PORT": environ.get("SQL_PORT", "5432"),
     }
 }
 
@@ -137,12 +156,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
-
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static"
-
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+
+STATIC_ROOT = Path(environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "static/"))
+MEDIA_ROOT = Path(environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media/"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -159,3 +177,17 @@ EMAIL_BACKEND = (
     if DEBUG
     else "notifications.mail.DynamicSMPTEmailBackend"
 )
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "ERROR",
+    },
+}

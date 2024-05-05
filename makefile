@@ -2,10 +2,7 @@ MAKEFLAGS:= --no-print-directory
 SHELL=bash
 TEST_APPS=profiles
 
-.PHONY: dev test lint
-
-hmm:
-	echo $(RUNSERVER_CMD)
+.PHONY: dev test lint init reset_db compare_reqs compare_reqs_comm
 
 dev:
 	@$(MAKE) -f dev.makefile
@@ -33,6 +30,18 @@ lint:
 		cd "$$OLDPWD"; \
 	done; \
 	echo ' -------------'
+
+
+manage=. venv/bin/activate && set -a; . .env; set +a; ./manage.py
+
+init:
+	$(manage) migrate --noinput
+	$(manage) collectstatic --noinput
+	$(manage) createsuperuser --noinput
+
+notify:
+	$(manage) notify
+
 
 define setupscriptbody
 from loans.models import Period, Renewal
@@ -91,9 +100,6 @@ export setupscriptbody
 setupscript := ./manage.py	shell -c "$$setupscriptbody"
 
 reset_db:
-	rm -f db.sqlite3
-	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
-	rm -rf site_configuration/migrations/* notifications/migrations/*
 	. venv/bin/activate; ./manage.py makemigrations books profiles loans
 	. venv/bin/activate; ./manage.py makemigrations site_configuration notifications
 	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore

@@ -11,3 +11,4 @@ media
 .*.swo
 cert.crt
 cert.key
+/.env
