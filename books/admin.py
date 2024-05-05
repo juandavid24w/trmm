@@ -28,12 +28,12 @@ def custom_title_filter_factory(title):
 
 
 class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
-    def change_view(self, request, object_id, *args, **kwargs):
+    def change_view(
+        self, request, object_id, form_url="", extra_context=None
+    ):
         obj = get_object_or_404(Specimen, pk=object_id)
 
-        return redirect(
-            reverse("admin:books_book_change", args=(obj.book.pk,))
-        )
+        return redirect("admin:books_book_change", args=(obj.book.pk,))
 
     search_fields = [
         "book__isbn",

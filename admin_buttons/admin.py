@@ -69,24 +69,22 @@ class AdminButtonsMixin:
         extra_context["admin_buttons_config"] = config
         return extra_context
 
-    def add_view(self, request, *args, extra_context=None, **kwargs):
+    def add_view(self, request, form_url="", extra_context=None):
         extra_context = self._admin_buttons_get_extra_context(
             extra_context, request
         )
 
-        return super().add_view(
-            request, *args, extra_context=extra_context, **kwargs
-        )
+        return super().add_view(request, form_url, extra_context)
 
     def change_view(
-        self, request, object_id, *args, extra_context=None, **kwargs
+        self, request, object_id, form_url="", extra_context=None
     ):
         extra_context = self._admin_buttons_get_extra_context(
             extra_context, request
         )
 
         return super().change_view(
-            request, object_id, *args, extra_context=extra_context, **kwargs
+            request, object_id, form_url, extra_context
         )
 
     @property

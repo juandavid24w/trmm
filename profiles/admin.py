@@ -32,7 +32,9 @@ class EmailInline(admin.TabularInline):
 class ProfileAdmin(HiddenAdminMixin, admin.ModelAdmin):
     search_fields = ["user__first_name", "user__last_name", "grade"]
 
-    def change_view(self, request, object_id, *args, **kwargs):
+    def change_view(
+        self, request, object_id, form_url="", extra_context=None
+    ):
         obj = get_object_or_404(Profile, pk=object_id)
 
         return redirect(

@@ -145,16 +145,14 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         ]
         return my_urls + urls
 
-    def change_view(self, request, object_id, *args, form_url="", **kwargs):
+    def change_view(
+        self, request, object_id, form_url="", extra_context=None
+    ):
         if not request.user.has_perm("loans.change_loan"):
             form_url = reverse("admin:loans_loan_renew", args=(object_id,))
 
         return super().change_view(
-            request,
-            object_id,
-            *args,
-            form_url=form_url,
-            **kwargs,
+            request, object_id, form_url, extra_context
         )
 
     def renew_view(self, request, obj_or_id):
