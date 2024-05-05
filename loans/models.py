@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import Count, DurationField, F, Q, Sum
 from django.db.models.functions import Cast
 from django.utils import timezone
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _
 
 from books.models import Specimen
 
@@ -52,8 +52,8 @@ class Renewal(models.Model):
 
 
 class LoanManager(models.Manager):  # pylint: disable=too-few-public-methods
-    """Annotate due date (`due`) and number of renovations
-    (`renewals__count`) to resulting querysets
+    """Annotate due date (`due`), number of renovations
+    (`renewals__count`) and late bool (`late`) to resulting querysets
     """
 
     def get_queryset(self, *args, **kwargs):
@@ -66,6 +66,7 @@ class LoanManager(models.Manager):  # pylint: disable=too-few-public-methods
         qs = qs.annotate(due=F("date") + duration)
         qs = qs.annotate(Count("renewals"))
         qs = qs.annotate(returned=Q(return_date__isnull=False))
+        qs = qs.annotate(late=Q(returned=False) & Q(due__lt=timezone.now()))
 
         return qs
 
@@ -138,7 +139,6 @@ class Loan(models.Model):
 
         self.renewals.remove(renewal)
         return None
-
 
     class Meta:
         verbose_name = _("Empréstimo")

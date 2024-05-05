@@ -1,3 +1,5 @@
+import re
+
 from adminsortable2.admin import SortableAdminMixin
 from django.contrib import admin, messages
 from django.db import models
@@ -110,7 +112,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     def late(self, obj):
         href = static("loans/img/late.svg")
 
-        if not obj.return_date and obj.due < timezone.now():
+        if obj.late:
             return mark_safe(f'<img src="{href}">')
         return ""
 
@@ -208,15 +210,15 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         {
             "name": "_renew",
             "label": _("Renovar"),
+            "condition": lambda req, ctx: not re.search("add/$", req.path),
             "method": "renew_view",
         },
         {
             "name": "_unrenew",
             "label": _("Remover renovação"),
             "method": "unrenew_view",
-            "condition": lambda req, ctx: req.user.has_perm(
-                "loans.change_loan"
-            ),
+            "condition": lambda req, ctx: not re.search("add/$", req.path)
+            and req.user.has_perm("loans.change_loan"),
             "use_separator": False,
         },
     ]
