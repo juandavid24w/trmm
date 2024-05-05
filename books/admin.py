@@ -1,4 +1,5 @@
 import re
+import time
 import urllib.parse
 
 from django import forms
@@ -9,6 +10,8 @@ from django.urls import reverse
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from isbnlib import canonical, clean, ean13, get_isbnlike
+from unidecode import unidecode
 
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
@@ -33,7 +36,39 @@ def custom_title_filter_factory(title):
     return Wrapper
 
 
-class SpecimenAdmin(HiddenAdminMixin, admin.ModelAdmin):
+class UnaccentSearchMixin:
+    def get_search_results(self, request, queryset, search_term):
+        qs, has_dups = super().get_search_results(
+            request, queryset, search_term
+        )
+
+        if search_term:
+            if get_isbnlike(search_term, level="strict"):
+                isbn_field = self.canonical_isbn_field
+                isbn_search = ean13(canonical(clean(search_term)))
+                qs |= self.model.objects.filter(**{isbn_field: isbn_search})
+
+            request.search_unaccent = True
+            unaccent_qs, unaccent_dups = super().get_search_results(
+                request, queryset, unidecode(search_term)
+            )
+            request.search_unaccent = False
+
+            qs |= unaccent_qs
+            has_dups = has_dups or unaccent_dups
+
+        return qs, has_dups
+
+    def get_search_fields(self, request):
+        if getattr(request, "search_unaccent", False):
+            return self.unaccent_search_fields
+        return super().get_search_fields(request)
+
+
+class SpecimenAdmin(UnaccentSearchMixin, HiddenAdminMixin, admin.ModelAdmin):
+    canonical_isbn_field = "book__canonical_isbn"
+    unaccent_search_fields = ("book__unaccent_title", "book__unaccent_author")
+
     def change_view(
         self, request, object_id, form_url="", extra_context=None
     ):
@@ -81,7 +116,12 @@ class BookAdminForm(forms.ModelForm):
         fields = "__all__"
 
 
-class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
+class BookAdmin(
+    UnaccentSearchMixin,
+    AdminButtonsMixin,
+    BarcodeSearchBoxMixin,
+    admin.ModelAdmin,
+):
     form = BookAdminForm
     inlines = [SpecimenInline]
     fields = [
@@ -106,6 +146,8 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         "classification__name",
         "classification__abbreviation",
     )
+    unaccent_search_fields = ("unaccent_author", "unaccent_title")
+    canonical_isbn_field = "canonical_isbn"
     list_display = (
         "title",
         "author",

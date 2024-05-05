@@ -4,6 +4,8 @@ from django.db.models import Count, Q
 from django.db.models.lookups import Exact
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from isbnlib import canonical, ean13
+from unidecode import unidecode
 
 from . import cutter
 from .language import ARTICLES
@@ -50,12 +52,24 @@ class Book(models.Model):
         null=True,
         blank=False,
     )
+    canonical_isbn = models.CharField(
+        max_length=13,
+        verbose_name=_("ISBN-13 canônico"),
+        null=True,
+        editable=False,
+    )
     title = models.TextField(verbose_name=_("Título"))
+    unaccent_title = models.TextField(
+        verbose_name=_("Título semacentos"), editable=False
+    )
     author_first_names = models.CharField(
         max_length=100, verbose_name=_("Primeiros nomes do autor")
     )
     author_last_name = models.CharField(
         max_length=50, verbose_name=_("Último nome do autor")
+    )
+    unaccent_author = models.CharField(
+        max_length=150, verbose_name=_("Autor sem acento"), editable=False
     )
     publisher = models.CharField(max_length=300, verbose_name=_("Editora"))
     classification = models.ForeignKey(
@@ -110,6 +124,11 @@ class Book(models.Model):
         self.title_first_letter = self.calc_title_first_letter()
         if not self.code:
             self.code = self.calc_code()
+        self.canonical_isbn = ean13(canonical(self.isbn))
+        self.unaccent_author = unidecode(
+            f"{self.author_first_names} {self.author_last_name}"
+        )
+        self.unaccent_title = unidecode(self.title)
         return super().save(*args, **kwargs)
 
     @property
