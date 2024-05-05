@@ -1,0 +1,10 @@
+{% load i18n static %}
+
+<span class="input-wrapper">
+{% include 'django/forms/widgets/text.html' %}
+<button class="barcode-button" type="button" onclick="readBarcode(this)">
+  <img class="barcode-icon" src="{% static 'barcodes/img/barcode.svg'  %}" alt="{% translate 'Ler código de barras' %}">
+</button>
+{% block inside_wrapper %}{% endblock %}
+</span>
+{% include 'barcodes/video.html' %}

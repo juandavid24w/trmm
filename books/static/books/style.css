@@ -1,9 +1,0 @@
-.isbn-input {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-}
-
-.isbn-input input {
-  margin: 0;
-}

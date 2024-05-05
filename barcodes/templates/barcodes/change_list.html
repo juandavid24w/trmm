@@ -2,8 +2,5 @@
 {% load barcodes_search_form i18n %}
 {% block search %}
 {% barcodes_search_form cl %}
-<div class="barcode-video-wrapper">
-  <button onclick="hideVideo()">{% trans 'Fechar' %}</button>
-  <video class="barcode-video" autoplay></video>
-</div>
+{% include 'barcodes/video.html' %}
 {% endblock %}

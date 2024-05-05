@@ -1,7 +1,7 @@
-from django.forms.widgets import TextInput
+from barcodes.widgets import BarcodeTextInput
 
 
-class ISBNSearchInput(TextInput):
+class ISBNSearchInput(BarcodeTextInput):
     template_name = "books/text.html"
     isbn_search_submit_name = "_isbnsearch"
 
@@ -10,6 +10,3 @@ class ISBNSearchInput(TextInput):
         context["isbn_search_submit_name"] = self.isbn_search_submit_name
 
         return context
-
-    class Media:
-        css = {"all": ["books/style.css"]}

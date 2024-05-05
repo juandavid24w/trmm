@@ -225,7 +225,7 @@ class BookAdmin(
         if obj is None:
             kwargs["help_texts"] = {
                 "units": _(
-                    "Salve o livro primeiro, depois adicione exemplares dele"
+                    "Salve o livro primeiro, depois adicione exemplares"
                 )
             }
         return super().get_form(request, obj, **kwargs)

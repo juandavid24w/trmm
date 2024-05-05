@@ -28,8 +28,6 @@ function hideOnClickOutside(element, hideCallback) {
 let barcodeDetector, targetElement, searchButton, videoElement, buttonElement;
 
 window.addEventListener('load', function () {
-  searchButton = document.querySelector("#searchbar + input");
-  targetElement = document.querySelector("#searchbar");
   videoElement = document.querySelector("video.barcode-video");
   buttonElement = document.querySelector(".barcode-button");
 
@@ -43,9 +41,26 @@ window.addEventListener('load', function () {
 
 })
 
-async function readBarcode() {
+async function readBarcode(element) {
   if (!window['BarcodeDetector']) {
     console.log("Barcode detection not available in this browser. Quitting...")
+  }
+
+  if (element) {
+    // if element is set, we are coming from a BarcodeTextInput
+    targetElement = element.previousSibling
+    while (targetElement.tagName !== "INPUT") {
+      targetElement = targetElement.previousSibling
+    }
+
+    searchButton = element.nextSibling
+    while (searchButton.tagName !== "INPUT") {
+      searchButton = searchButton.nextSibling
+    }
+  } else {
+    // else, we are coming from a changelist searchbar
+    targetElement = document.querySelector("#searchbar");
+    searchButton = document.querySelector("#searchbar + input");
   }
 
   showVideo();
@@ -78,9 +93,9 @@ async function readBarcode() {
     // We expect a single barcode.
     // It's possible to compare X/Y coordinates to get the center-most one.
     // One can also do "preferred symbology" logic here.
+    hideVideo();
     const value = choosePreferred(barcodes)
     yieldValue(value)
-    hideVideo();
     searchButton.click();
     break;
   }

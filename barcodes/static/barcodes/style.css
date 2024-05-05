@@ -1,13 +1,22 @@
+.input-wrapper .barcode-icon,
 #changelist-search .barcode-icon {
-  height: 100%;
   padding: 0;
   margin: 0 4px;
+}
+
+.searchbar-line label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#toolbar #searchbar {
+  height: unset;
 }
 
 .barcode-video-wrapper button,
 .barcode-button {
   cursor: pointer;
-  height: 28px;
   border: 1px solid var(--border-color);
   background: var(--body-bg);
   border-radius: 4px;
@@ -32,4 +41,22 @@
 
 .barcode-video {
   border-radius: 4px;
+  z-index: 5;
+}
+
+.searchbar-line,
+.input-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.input-wrapper input[type="button"] {
+  margin: 0;
+}
+
+.searchbar-line .small {
+  align-self: center;
 }

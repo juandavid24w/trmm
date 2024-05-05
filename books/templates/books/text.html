@@ -1,6 +1,6 @@
+{% extends 'barcodes/text.html' %}
 {% load i18n %}
 
-<span class="isbn-input">
-{% include 'django/forms/widgets/text.html' %}
+{% block inside_wrapper %}
 <input type="submit" value={% trans 'Pesquisar' %} name="{{ isbn_search_submit_name }}">
-</span>
+{% endblock %}
