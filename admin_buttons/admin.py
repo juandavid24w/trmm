@@ -51,7 +51,7 @@ class AdminButtonsMixin:
 
         return super().response_change(request, obj, *args, **kwargs)
 
-    def _admin_buttons_get_extra_context(self, context, request):
+    def _admin_buttons_get_extra_context(self, request, context):
         config = []
 
         for o in self._admin_buttons_config:
@@ -71,7 +71,7 @@ class AdminButtonsMixin:
 
     def add_view(self, request, form_url="", extra_context=None):
         extra_context = self._admin_buttons_get_extra_context(
-            extra_context, request
+            request, extra_context
         )
 
         return super().add_view(request, form_url, extra_context)
@@ -80,7 +80,7 @@ class AdminButtonsMixin:
         self, request, object_id, form_url="", extra_context=None
     ):
         extra_context = self._admin_buttons_get_extra_context(
-            extra_context, request
+            request, extra_context
         )
 
         return super().change_view(
