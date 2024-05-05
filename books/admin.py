@@ -1,4 +1,7 @@
-from django.contrib import admin
+import urllib.parse
+
+from django import forms
+from django.contrib import admin, messages
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -13,7 +16,9 @@ from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
 from public_admin.admin import PublicModelAdminMixin
 
+from . import isbn
 from .models import Book, Classification, Location, Specimen
+from .widgets import ISBNSearchInput
 
 mark_safe_lazy = lazy(mark_safe, str)
 
@@ -64,7 +69,19 @@ class SpecimenInline(admin.TabularInline):
         return obj.available
 
 
+class BookAdminForm(forms.ModelForm):
+    isbn_search_submit_name = "_isbnsearch"
+
+    class Meta:
+        model = Book
+        widgets = {
+            "isbn": ISBNSearchInput(),
+        }
+        fields = "__all__"
+
+
 class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
+    form = BookAdminForm
     inlines = [SpecimenInline]
     fields = [
         "isbn",
@@ -159,6 +176,23 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
                 obj.specimens.create()
 
         return redirect(request.META["HTTP_REFERER"])
+
+    def add_view(self, request, form_url="", extra_context=None):
+        if ISBNSearchInput.isbn_search_submit_name in request.POST:
+            results, msgs = isbn.search(request.POST["isbn"])
+            href = reverse("admin:books_book_add")
+
+            if not results:
+                for msg in msgs:
+                    messages.error(request, msg)
+                return redirect(href)
+
+            for msg in msgs:
+                messages.success(request, msg)
+            get_params = urllib.parse.urlencode(results)
+            return redirect(f"{href}?{get_params}")
+
+        return super().add_view(request, form_url, extra_context)
 
 
 class ClassificationAdmin(admin.ModelAdmin):
