@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin.forms import AdminAuthenticationForm
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -7,11 +8,17 @@ from public_admin.admin import PublicAdminSiteMixin
 from site_configuration.models import SiteConfiguration
 
 
+class AuthenticationForm(AdminAuthenticationForm):
+    def confirm_login_allowed(self, user):
+        super(AdminAuthenticationForm, self).confirm_login_allowed(user)
+
+
 class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
     site_title = _("Biblioteca")
     site_header = _("Biblioteca")
     index_title = _("Administração")
 
+    login_form = AuthenticationForm
     site_configuration_model = SiteConfiguration
 
     def each_context(self, request, *args, **kwargs):
