@@ -71,6 +71,8 @@ def make_return_grade(_modeladmin, _request, queryset):
 
 @admin.register(User)
 class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
+    add_form_template = "admin/auth/user/add_form.html"
+
     list_display = [x for x in BaseUserAdmin.list_display if x != "is_staff"]
     list_display.insert(-1, "profile_grade")
     list_display.append("is_moderator")
@@ -83,12 +85,20 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
     readonly_fields = ["loan"]
     actions = [*BaseUserAdmin.actions, make_advance_grade, make_return_grade]
 
-    def get_fieldsets(self, request, obj=None, *args, **kwargs):
-        fs = super().get_fieldsets(request, obj, *args, **kwargs)
-        if not obj:
-            fs = fs[:2] + fs[3:]
+    def get_inline_instances(self, request, obj=None):
+        if obj is None:
+            return super(FieldsetsInlineMixin, self).get_inline_instances(
+                request, obj
+            )
+        return super().get_inline_instances(request, obj)
 
-        return fs
+    def get_fieldsets(self, request, obj=None, *args, **kwargs):
+        if obj is None:
+            return super(FieldsetsInlineMixin, self).get_fieldsets(
+                request, obj, *args, **kwargs
+            )
+
+        return super().get_fieldsets(request, obj, *args, **kwargs)
 
     def loan(self, obj):
         return loan_link({"user": obj.profile.pk}, _("Fazer empréstimo"))
