@@ -1,3 +1,4 @@
+import re
 import urllib.parse
 
 from django import forms
@@ -159,8 +160,9 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             "name": "_addspecimen",
             "method": "add_specimen",
             "label": _("Adicionar exemplares"),
-            "condition": lambda req, ctx: req.user.has_perm(
-                "books.add_specimen"
+            "condition": lambda req, ctx: (
+                req.user.has_perm("books.add_specimen")
+                and not re.search(r"add/?$", req.path)
             ),
             "extra_html": mark_safe_lazy(
                 '<input type="number" step=1 min=1 max=99 value=1 '
@@ -168,6 +170,23 @@ class BookAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             ),
         }
     ]
+
+    def get_inline_instances(self, request, obj=None):
+        ii = super().get_inline_instances(request, obj)
+
+        if obj is None:
+            return [i for i in ii if not isinstance(i, SpecimenInline)]
+
+        return ii
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is None:
+            kwargs["help_texts"] = {
+                "units": _(
+                    "Salve o livro primeiro, depois adicione exemplares dele"
+                )
+            }
+        return super().get_form(request, obj, **kwargs)
 
     def add_specimen(self, request, obj):
         n = int(request.POST["n_specimens"])
