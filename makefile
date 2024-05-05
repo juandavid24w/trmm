@@ -40,8 +40,8 @@ from django.contrib.auth.models import User, Group, Permission
 from site_configuration.models import SiteConfiguration
 Period(description="Acervo fixo", days=15).save()
 Period(description="Acervo móvel", days=30).save()
-Renewal(description="Primeira renovação", days=15).save()
-Renewal(description="Segunda renovação", days=15).save()
+Renewal(description="Primeira renovação", days=15, order=1).save()
+Renewal(description="Segunda renovação", days=15, order=2).save()
 usergroup, _ = Group.objects.get_or_create(name="Usuário")
 usergroup.permissions.add(Permission.objects.get(codename="view_book"))
 usergroup.permissions.add(Permission.objects.get(codename="view_specimen"))
