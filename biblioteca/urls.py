@@ -18,8 +18,9 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic.base import RedirectView
+from django.views.static import serve
 
 from site_configuration.views import PasswordResetView
 
@@ -27,7 +28,16 @@ from .admin import public_site
 
 urlpatterns = [
     *(
-        [path("__debug__/", include("debug_toolbar.urls"))]
+        [
+            path("__debug__/", include("debug_toolbar.urls")),
+            re_path(
+                "^media/(?P<path>.*)$",
+                serve,
+                {
+                    "document_root": settings.MEDIA_ROOT,
+                },
+            ),
+        ]
         if settings.DEBUG
         else []
     ),

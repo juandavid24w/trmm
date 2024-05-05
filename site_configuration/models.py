@@ -12,6 +12,18 @@ SiteConfigurationModel = site_configuration_factory(
 
 
 class SiteConfiguration(SiteConfigurationModel):
+    administration_header = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Cabeçalho da administração do site"),
+    )
+    favicon = models.ImageField(
+        verbose_name=_("Favicon"),
+        upload_to="site_configuration",
+        null=True,
+        blank=True,
+    )
     welcome_msg = HTMLField(
         null=True,
         blank=True,
@@ -21,12 +33,6 @@ class SiteConfiguration(SiteConfigurationModel):
         null=True,
         blank=True,
         verbose_name=_("Mensagem de despedida"),
-    )
-    administration_header = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name=_("Cabeçalho da administração do site"),
     )
 
     def __str__(self):

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.urls import reverse
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from dynamic_admin_site.site import DynamicAdminMixin
@@ -25,10 +26,12 @@ class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
         context = super().each_context(request, *args, **kwargs) or {}
 
         cls = self.site_configuration_model
-        context["site_header"] = cls.get_solo().administration_header
+        conf = cls.get_solo()
+        context["site_header"] = conf.administration_header
+        context["favicon"] = conf.favicon
 
         if request.path == reverse("admin:logout"):
-            context["goodbye_msg"] = SiteConfiguration.get_solo().goodbye_msg
+            context["goodbye_msg"] = conf.goodbye_msg
 
         if request.path == reverse("admin:login"):
             context["email_activated"] = (

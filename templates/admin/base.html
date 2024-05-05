@@ -1,0 +1,8 @@
+{% extends 'admin/base.html' %}
+
+{% block extrahead %}
+{{ super.block }}
+{% if favicon and favicon.url %}
+<link rel="icon" href="{{ favicon.url }}" type="image/x-icon">
+{% endif %}
+{% endblock %}
