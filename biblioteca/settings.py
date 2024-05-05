@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "site_configuration",
     "tinymce",
     "django_object_actions",
+    "notifications",
 ] + (
     [
         "django_extensions",
@@ -152,3 +153,9 @@ TINYMCE_JS_URL = (
 )
 
 INTERNAL_IPS = ["127.0.0.1"] if DEBUG else []
+
+EMAIL_BACKEND = (
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "notifications.mail.DynamicSMPTEmailBackend"
+)

@@ -93,9 +93,9 @@ setupscript := ./manage.py	shell -c "$$setupscriptbody"
 reset_db:
 	rm -f db.sqlite3
 	rm -rf books/migrations/* profiles/migrations/* loans/migrations/*
-	rm -rf site_configuration/migrations/*
+	rm -rf site_configuration/migrations/* notifications/migrations/*
 	. venv/bin/activate; ./manage.py makemigrations books profiles loans
-	. venv/bin/activate; ./manage.py makemigrations site_configuration
+	. venv/bin/activate; ./manage.py makemigrations site_configuration notifications
 	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore
 	. venv/bin/activate; ./manage.py migrate
 	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""

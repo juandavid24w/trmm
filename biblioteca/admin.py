@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from dynamic_admin_site.site import DynamicAdminMixin
 from public_admin.admin import PublicAdminSiteMixin
-from site_configuration.models import SiteConfiguration
+from site_configuration.models import EmailConfiguration, SiteConfiguration
 
 
 class AuthenticationForm(AdminAuthenticationForm):
@@ -28,12 +28,12 @@ class BibliotecaAdminSite(DynamicAdminMixin, admin.AdminSite):
         context["site_header"] = cls.get_solo().administration_header
 
         if request.path == reverse("admin:logout"):
-            try:
-                context["goodbye_msg"] = (
-                    SiteConfiguration.get_solo().goodbye_msg
-                )
-            except SiteConfiguration.DoesNotExist:
-                pass
+            context["goodbye_msg"] = SiteConfiguration.get_solo().goodbye_msg
+
+        if request.path == reverse("admin:login"):
+            context["email_activated"] = (
+                EmailConfiguration.get_solo().activated
+            )
 
         return context
 

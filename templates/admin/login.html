@@ -1,0 +1,12 @@
+{% extends 'admin/login.html' %}
+
+{% block extrastyle %}
+{{ block.super }}
+{% if not email_activated %}
+<style>
+.password-reset-link {
+  display: none;
+}
+</style>
+{% endif %}
+{% endblock %}

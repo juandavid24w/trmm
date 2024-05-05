@@ -19,6 +19,8 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+from site_configuration.views import PasswordResetView
+
 from .admin import public_site
 
 urlpatterns = [
@@ -27,6 +29,35 @@ urlpatterns = [
         if settings.DEBUG
         else []
     ),
+    path(
+        "admin/password_reset/",
+        PasswordResetView.as_view(
+            extra_context={"site_header": admin.site.site_header}
+        ),
+        name="admin_password_reset",
+    ),
+    path(
+        "admin/password_reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            extra_context={"site_header": admin.site.site_header}
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            extra_context={"site_header": admin.site.site_header}
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(
+            extra_context={"site_header": admin.site.site_header}
+        ),
+        name="password_reset_complete",
+    ),
+    path("accounts/login/", RedirectView.as_view(url="/admin/")),
     path("admin/", admin.site.urls),
     path("tinymce/", include("tinymce.urls")),
     path("", public_site.urls),
