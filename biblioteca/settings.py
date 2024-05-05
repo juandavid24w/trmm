@@ -49,10 +49,18 @@ INSTALLED_APPS = [
     "admin_buttons",
     "site_configuration",
     "tinymce",
-] + (["django_extensions"] if DEBUG else [])
+] + (
+    [
+        "django_extensions",
+        "debug_toolbar",
+    ]
+    if DEBUG
+    else []
+)
 
 
 MIDDLEWARE = [
+    *(["debug_toolbar.middleware.DebugToolbarMiddleware"] if DEBUG else []),
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -141,3 +149,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 TINYMCE_JS_URL = (
     "https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
 )
+
+INTERNAL_IPS = ["127.0.0.1"] if DEBUG else []
