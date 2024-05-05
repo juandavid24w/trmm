@@ -69,6 +69,10 @@ modgroup.permissions.add(Permission.objects.get(codename="change_loan"))
 modgroup.permissions.add(Permission.objects.get(codename="delete_loan"))
 modgroup.permissions.add(Permission.objects.get(codename="view_period"))
 modgroup.permissions.add(Permission.objects.get(codename="view_renewal"))
+modgroup.permissions.add(Permission.objects.get(codename="view_documentationpage"))
+modgroup.permissions.add(Permission.objects.get(codename="change_documentationpage"))
+modgroup.permissions.add(Permission.objects.get(codename="add_documentationpage"))
+modgroup.permissions.add(Permission.objects.get(codename="delete_documentationpage"))
 try:
 	sc = SiteConfiguration.objects.get()
 	sc.site_title = "Biblioteca da Arco"

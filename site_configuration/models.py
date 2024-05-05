@@ -33,3 +33,29 @@ class SiteConfiguration(SiteConfigurationModel):
 
     class Meta:
         verbose_name = _("Configuração do site")
+
+
+class DocumentationPage(models.Model):
+    order = models.PositiveIntegerField(
+        default=0,
+        blank=False,
+        null=False,
+        verbose_name=_("Ordem"),
+    )
+    title = models.CharField(
+        max_length=100,
+        verbose_name=_("Título"),
+    )
+    text = HTMLField(
+        null=True,
+        blank=True,
+        verbose_name=_("Mensagem"),
+    )
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = _("Página de documentação")
+        verbose_name_plural = _("Documentação")
+        ordering = ["order"]

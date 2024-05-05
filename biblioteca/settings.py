@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "admin_buttons",
     "site_configuration",
     "tinymce",
+    "django_object_actions",
 ] + (
     [
         "django_extensions",
