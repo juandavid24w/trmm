@@ -228,6 +228,8 @@ class BookAdmin(
                     "Salve o livro primeiro, depois adicione exemplares"
                 )
             }
+        else:
+            kwargs["widgets"] = {}
         return super().get_form(request, obj, **kwargs)
 
     def add_specimen(self, request, obj):
