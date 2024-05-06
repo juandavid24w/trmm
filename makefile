@@ -32,17 +32,6 @@ lint:
 	echo ' -------------'
 
 
-manage=. venv/bin/activate && set -a; . .env; set +a; ./manage.py
-
-init:
-	$(manage) migrate --noinput
-	$(manage) collectstatic --noinput
-	$(manage) createsuperuser --noinput
-
-notify:
-	$(manage) notify
-
-
 define setupscriptbody
 from loans.models import Period, Renewal
 from django.contrib.auth.models import User, Group, Permission
@@ -98,16 +87,20 @@ endef
 
 export setupscriptbody
 setupscript := ./manage.py	shell -c "$$setupscriptbody"
+venv=. venv/bin/activate
 
 reset_db:
-	. venv/bin/activate; ./manage.py makemigrations books profiles loans
-	. venv/bin/activate; ./manage.py makemigrations site_configuration notifications
-	git diff --numstat */migrations | awk '$$1==1 && $$2==1{print $$3}' | xargs git restore
-	. venv/bin/activate; ./manage.py migrate
-	. venv/bin/activate; DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
-	. venv/bin/activate; ./manage.py import_profiles
-	. venv/bin/activate; $(setupscript)
-	. venv/bin/activate; ./manage.py import_books
+	rm -f db.sqlite3
+	rm -rf */migrations/*
+	git restore */migrations/
+	$(venv); ./manage.py migrate
+	$(venv); ./manage.py makemigrations books profiles loans
+	$(venv); ./manage.py makemigrations site_configuration notifications
+	$(venv); ./manage.py migrate
+	$(venv); DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser --noinput --username "admin" --email ""
+	$(venv); ./manage.py import_profiles
+	$(venv); $(setupscript)
+	$(venv); ./manage.py import_books
 
 tmp2 := $(shell mktemp)
 tmp1 := $(shell mktemp)
@@ -122,3 +115,4 @@ compare_reqs_comm:
 	@pip freeze | sort > ${tmp2}
 	@comm -13 ${tmp1} ${tmp2}
 
+-include makefile.deploy
