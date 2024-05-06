@@ -3,7 +3,7 @@
 {% block content %}
 
 {% if request.GET.detail %}
-<div id="content-main">
+<div id="content-main" class="detail">
 {% block object-tools %}{{ block.super }}{% endblock %}
 <br><br><br>
 {{ original.text|safe }}

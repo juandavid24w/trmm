@@ -34,7 +34,7 @@ class DocumentationAdmin(
             "admin:site_configuration_documentationpage_change",
             args=(obj.pk,),
         )
-        return redirect(f"{base}")
+        return redirect(base)
 
     @action(
         label=_("Visualizar"), description=_("Visualizar essa documentação")
@@ -58,6 +58,11 @@ class DocumentationAdmin(
         if request.GET.get("detail", False):
             return False
         return super().has_change_permission(request, obj)
+
+    class Media:
+        css = {
+            "all": ["site_configuration/style.css"],
+        }
 
 
 @admin.register(EmailConfiguration)

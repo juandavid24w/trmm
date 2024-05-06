@@ -82,6 +82,7 @@ MIDDLEWARE = [
     *(["debug_toolbar.middleware.DebugToolbarMiddleware"] if DEBUG else []),
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -170,6 +171,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 TINYMCE_JS_URL = (
     "https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
 )
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 600,
+    "width": 700,
+    "resize": "both",
+    "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,anchor,"
+    "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
+    "code,help,wordcount",
+    "license_key": "gpl",
+}
 
 INTERNAL_IPS = ["127.0.0.1"] if DEBUG else []
 
