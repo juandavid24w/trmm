@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "tinymce",
     "django_object_actions",
     "notifications",
+    "colorfield",
 ] + (
     [
         "django_extensions",

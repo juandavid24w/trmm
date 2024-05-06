@@ -1,8 +1,10 @@
+from colorfield.fields import ColorField
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Count, Q
 from django.db.models.lookups import Exact
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from isbnlib import canonical, ean13
 from unidecode import unidecode
@@ -16,9 +18,31 @@ class Location(models.Model):
     name = models.CharField(
         primary_key=True, max_length=20, verbose_name=_("Nome")
     )
+    color = ColorField(
+        null=True,
+        blank=True,
+        verbose_name=_("Cor"),
+    )
 
     def __str__(self):
         return self.name
+
+    def color_icon(self, size=16):
+        if not self.color:
+            return self.name
+        return format_html(
+            '<div style="display:flex;justify-content:center">'
+            + '<svg width="{}" height="{}" xmlns="http://www.w3.org/2000/svg">'
+            + '<circle cx="{}" cy="{}" r="{}" fill="{}" />'
+            + "</svg>"
+            + "</div>",
+            size,
+            size,
+            f"{size / 2:.2f}",
+            f"{size / 2:.2f}",
+            f"{size / 2:.2f}",
+            self.color,
+        )
 
     class Meta:
         verbose_name = _("Localização")

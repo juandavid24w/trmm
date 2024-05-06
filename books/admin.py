@@ -172,7 +172,7 @@ class BookAdmin(
         description=_("Localização"), ordering="classification__location"
     )
     def location(self, obj):
-        return obj.classification.location
+        return obj.classification.location.color_icon()
 
     @admin.display(description=_("Exemplares"), ordering="specimens__count")
     def units(self, obj):
@@ -261,11 +261,19 @@ class BookAdmin(
 
 
 class ClassificationAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "abbreviation", "location")
+    list_display = ("__str__", "abbreviation", "location", "location_color")
+
+    @admin.display(description=_("Cor da localização"))
+    def location_color(self, obj):
+        return obj.location.color_icon()
 
 
 class LocationAdmin(admin.ModelAdmin):
-    pass
+    list_display = ["__str__", "color_icon"]
+
+    @admin.display(description=_("Cor"))
+    def color_icon(self, obj):
+        return obj.color_icon()
 
 
 class PublicBookAdmin(PublicModelAdminMixin, BookAdmin):
