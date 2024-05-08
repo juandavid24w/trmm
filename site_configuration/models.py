@@ -1,10 +1,17 @@
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from solo.models import SingletonModel
 from tinymce.models import HTMLField
 
 from dynamic_admin_site.models import site_configuration_factory
+
+from .backups import BackupError, dump_db, dump_media
 
 SiteConfigurationModel = site_configuration_factory(
     "site_title", "site_header", "index_title"
@@ -124,3 +131,70 @@ class DocumentationPage(models.Model):
         verbose_name = _("Página de documentação")
         verbose_name_plural = _("Documentação")
         ordering = ["order"]
+
+
+class Backup(models.Model):
+    name = models.CharField(max_length=127, verbose_name=_("Nome"))
+    created = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Data de criação")
+    )
+
+    do_db_dump = models.BooleanField(
+        verbose_name=_("Inclui banco de dados?"),
+        default=True,
+    )
+    do_media_dump = models.BooleanField(
+        verbose_name=_("Inclui mídias?"),
+        default=True,
+    )
+
+    db_dump = models.FileField(
+        verbose_name=_("Arquivo de dados"),
+        blank=True,
+    )
+    media_dump = models.FileField(
+        verbose_name=_("Arquivos de mídias"),
+        blank=True,
+    )
+
+    def clean(self):
+        if self.do_media_dump and not self.media_dump.name:
+            try:
+                self.media_dump.name = str(dump_media(self))
+            except BackupError as e:
+                raise ValidationError(e) from e
+
+        if self.do_db_dump and not self.db_dump.name:
+            try:
+                self.db_dump.name = str(dump_db(self))
+            except BackupError as e:
+                raise ValidationError(e) from e
+
+        return super().clean()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Backup")
+        verbose_name_plural = _("Backups")
+        constraints = [
+            models.CheckConstraint(
+                check=Q(do_db_dump=True) | Q(do_media_dump=True),
+                name="db_or_media",
+                violation_error_message=_("Inclua banco de dados ou mídias"),
+            ),
+            models.UniqueConstraint(fields=["name"], name="unique_name"),
+        ]
+
+
+@receiver(pre_delete, sender=Backup)
+def delete_files_hook(sender, instance, *args, **kwargs):
+    try:
+        (settings.MEDIA_ROOT / instance.db_dump.name).unlink()
+    except OSError:
+        pass
+    try:
+        (settings.MEDIA_ROOT / instance.media_dump.name).unlink()
+    except OSError:
+        pass

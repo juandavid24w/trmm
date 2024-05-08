@@ -1,16 +1,29 @@
+import re
 from smtplib import SMTPException
 
 from adminsortable2.admin import SortableAdminMixin
 from django.contrib import admin, messages
+from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
 from django.core.mail import send_mail
-from django.shortcuts import redirect
-from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, render
+from django.urls import path, reverse
+from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django_object_actions import DjangoObjectActions, action
 from solo.admin import SingletonModelAdmin
 
-from .models import DocumentationPage, EmailConfiguration, SiteConfiguration
+from admin_buttons.admin import AdminButtonsMixin
+
+from .backups import restore_from_obj
+from .models import (
+    Backup,
+    DocumentationPage,
+    EmailConfiguration,
+    SiteConfiguration,
+)
 
 admin.site.register(SiteConfiguration, SingletonModelAdmin)
 
@@ -103,3 +116,145 @@ class EmailConfigurationAdmin(DjangoObjectActions, SingletonModelAdmin):
             request,
             _("Email está bem configurado! :)"),
         )
+
+
+@admin.register(Backup)
+class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
+    readonly_fields = ["created"]
+    add_exclude = ["created", "db_dump", "media_dump"]
+    upload_exclude = ["created", "do_db_dump", "do_media_dump"]
+    list_display = [
+        "__str__",
+        "do_db_dump",
+        "do_media_dump",
+        "created",
+        "restore",
+    ]
+    changelist_actions = ["upload"]
+
+    @action(label=_("Upload"), description=_("Fazer upload de arquivos de backup"))
+    def upload(self, request, obj):
+        url = reverse("admin:site_configuration_backup_add")
+        return HttpResponseRedirect(f"{url}?upload=true")
+
+    def get_initial_name(self):
+        names = Backup.objects.all().values_list("name", flat=True)
+        date = timezone.now().strftime("%y.%m.%d")
+
+        i = 0
+        candidate = _("%(date)s_backup%(n)s")
+
+        while (
+            name := candidate % {"date": date, "n": f"_{i}" if i else ""}
+        ) in names:
+            i += 1
+
+        return name
+
+    def get_changeform_initial_data(self, request):
+        from_qs = super().get_changeform_initial_data(request)
+        defaults = {"name": self.get_initial_name()}
+
+        defaults.update(from_qs)
+        return defaults
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        exclude = []
+
+        if obj is None:
+            try:
+                if "upload" in request.GET:
+                    exclude = self.upload_exclude
+                else:
+                    exclude = self.add_exclude
+            except AttributeError:
+                pass
+
+            return [
+                field for field in fields if field not in exclude
+            ]
+
+        return fields
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None:
+            return False
+        return super().has_change_permission(request, obj)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path(
+                "restore/<object_id>",
+                self.admin_site.admin_view(self.restore_view),
+                name="site_configuration_backup_restore",
+            )
+        ]
+        return my_urls + urls
+
+    def change_view(
+        self, request, object_id, form_url="", extra_context=None
+    ):
+        form_url = reverse(
+            "admin:site_configuration_backup_restore", args=(object_id,)
+        )
+
+        return super().change_view(
+            request, object_id, form_url, extra_context
+        )
+
+    def save_model(self, request, obj, form, change):
+        if "upload" in request.GET:
+            obj.do_db_dump = bool(obj.db_dump.name)
+            obj.do_media_dump = bool(obj.media_dump.name)
+
+        super().save_model(request, obj, form, change)
+
+    @admin.display(description=" ")
+    def restore(self, obj):
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse(
+                "admin:site_configuration_backup_restore", args=(obj.pk,)
+            ),
+            _("Restaurar"),
+        )
+
+    def restore_view(self, request, object_id):
+        obj = self.get_object(request, unquote(object_id))
+
+        if request.method == "POST" and "_restore" in request.POST:
+            messages.success(request, _("Restauração realizada com sucesso"))
+            restore_from_obj(obj)
+
+            return redirect("admin:site_configuration_backup_changelist")
+        if request.method == "POST" and "_restorecancel" in request.POST:
+            url = reverse(
+                "admin:site_configuration_backup_change", args=(object_id,)
+            )
+            return redirect(url)
+
+        context = dict(
+            self.admin_site.each_context(request),
+            title=_("Restaurar %s") % obj.name,
+        )
+        return render(
+            request, "site_configuration/restore.html", context=context
+        )
+
+    admin_buttons_config = [
+        {
+            "name": "_restoreconfirm",
+            "method": "restore_view",
+            "label": _("Restaurar esse backup"),
+            "condition": lambda req, ctx: not re.search(r"add/?$", req.path),
+        }
+    ]
+
+    class Media:
+        css = {
+            "all": [
+                "site_configuration/backup.css",
+            ]
+        }
