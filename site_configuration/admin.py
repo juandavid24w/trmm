@@ -137,12 +137,11 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
         url = reverse("admin:site_configuration_backup_add")
         return HttpResponseRedirect(f"{url}?upload=true")
 
-    def get_initial_name(self):
+    @staticmethod
+    def get_available_name(candidate=_("%(date)s_backup%(n)s")):
         names = Backup.objects.all().values_list("name", flat=True)
         date = timezone.now().strftime("%y.%m.%d")
-
         i = 0
-        candidate = _("%(date)s_backup%(n)s")
 
         while (
             name := candidate % {"date": date, "n": f"_{i}" if i else ""}
@@ -153,7 +152,7 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
 
     def get_changeform_initial_data(self, request):
         from_qs = super().get_changeform_initial_data(request)
-        defaults = {"name": self.get_initial_name()}
+        defaults = {"name": self.get_available_name()}
 
         defaults.update(from_qs)
         return defaults
