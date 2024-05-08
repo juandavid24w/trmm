@@ -5,6 +5,8 @@ click==8.1.7
 darker==2.1.1
 darkgraylib==1.2.0
 dill==0.3.8
+django-debug-toolbar==4.3.0
+djhtml==3.0.6
 et-xmlfile==1.1.0
 flynt==1.0.1
 graylint==1.1.1
@@ -20,4 +22,3 @@ pylint-django==2.5.5
 pylint-plugin-utils==0.8.2
 toml==0.10.2
 tomlkit==0.12.4
-django-debug-toolbar==4.3.0

@@ -2,17 +2,17 @@
 {% load i18n %}
 
 {% block breadcrumbs %}
-<div class="breadcrumbs">
-  <a href="{% url 'public_admin:index' %}">{% translate 'Ir para página principal' %}</a>
-  |
-  <a href="{% url 'admin:index' %}">{% translate 'Acessar novamente' %}</a>
-</div>
+  <div class="breadcrumbs">
+    <a href="{% url 'public_admin:index' %}">{% translate 'Ir para página principal' %}</a>
+    |
+    <a href="{% url 'admin:index' %}">{% translate 'Acessar novamente' %}</a>
+  </div>
 {% endblock %}
 
 {% block content %}
-{% if goodbye_msg %}
-<p>{{ goodbye_msg|safe }}</p>
-{% endif %}
+  {% if goodbye_msg %}
+    <p>{{ goodbye_msg|safe }}</p>
+  {% endif %}
 
 
 {% endblock %}

@@ -2,16 +2,16 @@
 
 {% block content %}
 
-{% if request.GET.detail %}
-<div id="content-main" class="detail">
-{% block object-tools %}{{ block.super }}{% endblock %}
-<br><br><br>
-{{ original.text|safe }}
-</div>
+    {% if request.GET.detail %}
+        <div id="content-main" class="detail">
+            {% block object-tools %}{{ block.super }}{% endblock %}
+            <br><br><br>
+            {{ original.text|safe }}
+        </div>
 
-{% else %}
-{{ block.super }}
-{% endif %}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
 {% endblock %}
 
 
