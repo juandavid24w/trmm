@@ -20,6 +20,6 @@ server:
 		awk '{ print "[server] " $$0 }'
 
 lint:
-	+@watchmake --quiet --make-cmd="make lint" -i venv --ext .py . \
+	+@watchmake --quiet --make-cmd="make lint" -i venv --ext .py --ext .html . \
 		| awk '{ print "[ lint ] " $$0 }'
 

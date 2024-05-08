@@ -1,7 +1,7 @@
 -include makefile.variables
 
 serverdo=[ -n $(host) ] && ssh $(host)
-environ=set -a; . .env; set +a;
+environ=set -a; . .env; set +a
 manage=$(environ); $(venv); ./manage.py
 
 deploy_pull:

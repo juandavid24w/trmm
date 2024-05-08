@@ -19,17 +19,24 @@ lint:
 			git diff --diff-filter d --name-only \
 			| cat - <(git diff --cached --name-only) \
 			| cat - <(git ls-files --other --exclude-standard) \
-			| egrep '.py$$' \
 			| egrep -v 'migrations/.*py$$' \
 		); \
-		if [ -n "$$files" ]; then \
-			darker $$files \
+		pyfiles=$$(echo $$files | egrep '.py'); \
+		htmlfiles=$$(echo $$files | egrep '.html'); \
+		if [ -n "$$pyfiles" ]; then \
+			darker $$pyfiles \
 			-l 78 -W 8 -f -i --color \
 			-L "pylint"; \
+		fi; \
+		if [ -n "$$htmlfiles" ]; then \
+			djhtml $$htmlfiles; \
 		fi; \
 		cd "$$OLDPWD"; \
 	done; \
 	echo ' -------------'
+
+
+
 
 
 define setupscriptbody
