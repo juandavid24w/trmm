@@ -5,26 +5,25 @@ environ=set -a; . .env; set +a
 manage=$(environ); $(venv); ./manage.py
 
 deploy_pull:
-	@echo git pull --rebase
-	@$(serverdo) 'cd $(folder); git pull --rebase'
+	$(serverdo) 'cd $(folder); git pull --rebase'
 
 deploy_pip:
-	@echo pip install -r requirements.txt
-	@$(serverdo) 'cd $(folder); $(environ); $(venv); pip install -r requirements.txt'
+	$(serverdo) 'cd $(folder); $(environ); $(venv); pip install -r requirements.txt'
 
 deploy_migrate:
-	@echo ./manage.py migrate
-	@$(serverdo) 'cd $(folder); $(manage) migrate'
+	$(serverdo) 'cd $(folder); $(manage) migrate'
 
 deploy_static:
-	@echo ./manage.py collectstatic --noinput
-	@$(serverdo) 'cd $(folder); $(manage) collectstatic --noinput'
+	$(serverdo) 'cd $(folder); $(manage) collectstatic --noinput'
 
 deploy_restart:
-	@echo sytemctl restart apache2
-	@$(serverdo) 'systemctl restart apache2'
+	$(serverdo) 'systemctl restart apache2'
 
-deploy: deploy_pull deploy_pip deploy_migrate deploy_static deploy_restart
+backup_condition=git diff HEAD HEAD~1 --name-only | grep -q migrations
+deploy_backup:
+	$(serverdo) 'cd $(folder); if $(backup_condition); then $(manage) backup; fi'
+
+deploy: deploy_pull deploy_pip deploy_migrate deploy_static deploy_restart deploy_backup
 
 init:
 	$(manage) migrate --noinput
