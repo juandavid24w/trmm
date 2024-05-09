@@ -12,4 +12,4 @@ media
 cert.crt
 cert.key
 /.env
-makefile.variables
+/dev/makefile.variables

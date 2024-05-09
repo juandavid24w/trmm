@@ -1,4 +1,4 @@
--include makefile.variables
+-include dev/makefile.variables
 
 serverdo=[ -n $(host) ] && ssh $(host)
 environ=set -a; . .env; set +a
@@ -24,11 +24,3 @@ deploy_backup:
 	$(serverdo) 'cd $(folder); if $(backup_condition); then $(manage) backup; fi'
 
 deploy: deploy_pull deploy_pip deploy_migrate deploy_static deploy_restart deploy_backup
-
-init:
-	$(manage) migrate --noinput
-	$(manage) collectstatic --noinput
-	$(manage) createsuperuser --noinput
-
-notify:
-	$(manage) notify

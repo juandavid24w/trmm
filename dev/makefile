@@ -15,11 +15,11 @@ all: server lint
 
 server:
 	@. ./venv/bin/activate \
-		&& ./manage.py $(RUNSERVER_CMD) 0.0.0.0:8080 \
+		&& python -u manage.py $(RUNSERVER_CMD) 0.0.0.0:8080 \
 		2>&1 | \
 		awk '{ print "[server] " $$0 }'
 
 lint:
-	+@watchmake --quiet --make-cmd="make lint" -i venv --ext .py --ext .html . \
+	+@python -u dev/watchmake/watchmake.py --quiet --make-cmd="make lint" -i venv --ext .py --ext .html . \
 		| awk '{ print "[ lint ] " $$0 }'
 

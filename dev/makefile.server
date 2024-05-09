@@ -1,0 +1,7 @@
+init:
+	$(manage) migrate --noinput
+	$(manage) collectstatic --noinput
+	$(manage) createsuperuser --noinput
+
+notify:
+	$(manage) notify

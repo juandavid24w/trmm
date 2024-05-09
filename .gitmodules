@@ -1,0 +1,3 @@
+[submodule "dev/watchmake"]
+	path = dev/watchmake
+	url = git@gitlab.com:joaoseckler/watchmake.git
