@@ -5,6 +5,14 @@ from django import forms
 class BarcodeSearchBoxMixin:
     change_list_template = "barcodes/change_list.html"
 
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["original_template"] = (
+            super().change_list_template or "admin/change_list.html"
+        )
+
+        return super().changelist_view(request, extra_context)
+
     @property
     def media(self):
         return super().media + forms.Media(
