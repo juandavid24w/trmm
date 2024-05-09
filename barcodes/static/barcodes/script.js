@@ -42,75 +42,87 @@ window.addEventListener('load', function () {
 })
 
 async function readBarcode(element) {
-  if (!window['BarcodeDetector']) {
-    console.log("Barcode detection not available in this browser. Quitting...")
-  }
-
-  if (element) {
-    // if element is set, we are coming from a BarcodeTextInput
-    targetElement = element.previousSibling
-    while (targetElement.tagName !== "INPUT") {
-      targetElement = targetElement.previousSibling
+  try {
+    if (!window['BarcodeDetector']) {
+      throw new Error("Barcode detection not available in this browser. Quitting...")
     }
 
-    searchButton = element.nextSibling
-    while (searchButton.tagName !== "INPUT") {
-      searchButton = searchButton.nextSibling
-    }
-  } else {
-    // else, we are coming from a changelist searchbar
-    targetElement = document.querySelector("#searchbar");
-    searchButton = document.querySelector("#searchbar + input");
-  }
+    if (element) {
+      // if element is set, we are coming from a BarcodeTextInput
+      targetElement = element.previousSibling
+      while (targetElement.tagName !== "INPUT") {
+        targetElement = targetElement.previousSibling
+      }
 
-  showVideo();
-  hideOnClickOutside(videoElement.parentNode, hideVideo)
-
-  // Get a stream for the rear camera, else the front (or side?) camera.
-  videoElement.srcObject = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: 'environment' }
-  });
-
-  while (videoIsShown()) {
-    // Try to detect barcodes in the current video frame.
-    const barcodes = await barcodeDetector.detect(videoElement);
-
-    // Continue loop if no barcode was found.
-    if (barcodes.length == 0)
-    {
-      // Scan interval 50 ms like in other barcode scanner demos.
-      // The higher the interval the longer the battery lasts.
-      await new Promise(r => setTimeout(r, 100));
-      continue;
+      searchButton = element.nextSibling
+      while (searchButton.tagName !== "INPUT") {
+        searchButton = searchButton.nextSibling
+      }
+    } else {
+      // else, we are coming from a changelist searchbar
+      targetElement = document.querySelector("#searchbar");
+      searchButton = document.querySelector("#searchbar + input");
     }
 
+    showVideo();
+    hideOnClickOutside(videoElement.parentNode, hideVideo)
 
-    // Notify user that a barcode has been found.
-    try {
-      navigator.vibrate(200);
-    } catch {}
+    // Get a stream for the rear camera, else the front (or side?) camera.
+    videoElement.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment' }
+    });
 
-    // We expect a single barcode.
-    // It's possible to compare X/Y coordinates to get the center-most one.
-    // One can also do "preferred symbology" logic here.
-    hideVideo();
-    const value = choosePreferred(barcodes)
-    yieldValue(value)
-    searchButton.click();
-    break;
+    while (videoIsShown()) {
+      // Try to detect barcodes in the current video frame.
+      const barcodes = await barcodeDetector.detect(videoElement);
+
+      // Continue loop if no barcode was found.
+      if (barcodes.length == 0)
+      {
+        // Scan interval 50 ms like in other barcode scanner demos.
+        // The higher the interval the longer the battery lasts.
+        await new Promise(r => setTimeout(r, 100));
+        continue;
+      }
+
+
+      // Notify user that a barcode has been found.
+      try {
+        navigator.vibrate(200);
+      } catch {}
+
+      // We expect a single barcode.
+      // It's possible to compare X/Y coordinates to get the center-most one.
+      // One can also do "preferred symbology" logic here.
+      hideVideo();
+      const value = choosePreferred(barcodes)
+      yieldValue(value)
+      searchButton.click();
+      break;
+    }
+  } catch (error) {
+    console.error("Barcode error:", error);
+
+    if (buttonElement) {
+      buttonElement.setAttribute("disabled", "");
+      if (barcodeButtonDisabledMessage) {
+        buttonElement.setAttribute("title", barcodeButtonDisabledMessage)
+      }
+      hideVideo();
+    }
   }
 }
 
-function choosePreferred(barcodes) {
-  let chosen = barcodes[0];
-  if (barcodes.length > 1) {
-    const goodFormat = barcodes.filter(x => x.format === "ean_13");
-    if (goodFormat.length > 0) {
-      chosen = goodFormat[0];
+  function choosePreferred(barcodes) {
+    let chosen = barcodes[0];
+    if (barcodes.length > 1) {
+      const goodFormat = barcodes.filter(x => x.format === "ean_13");
+      if (goodFormat.length > 0) {
+        chosen = goodFormat[0];
+      }
     }
-  }
 
-  return chosen.rawValue;
+    return chosen.rawValue;
 }
 
 function yieldValue(value) {

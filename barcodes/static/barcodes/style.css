@@ -23,6 +23,10 @@
   box-shadow: 0 -15px 20px -10px rgba(0, 0, 0, 0.15) inset;
 }
 
+.barcode-button[disabled] {
+  opacity: 0.4;
+}
+
 .barcode-video-wrapper {
   position: absolute;
   display: none;

@@ -1,5 +1,7 @@
 {% load i18n static %}
 
+{% include "barcodes/extrahead.html" %}
+
 <span class="input-wrapper">
   {% include 'django/forms/widgets/text.html' %}
   <button class="barcode-button" type="button" onclick="readBarcode(this)">

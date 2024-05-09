@@ -1,6 +1,10 @@
 {% extends "admin/change_list.html" %}
 {% load barcodes_search_form i18n %}
+{% block extrahead %}
+  {{ block.super }}
+  {% include "barcodes/extrahead.html" %}
+{% endblock %}
 {% block search %}
-    {% barcodes_search_form cl %}
-    {% include 'barcodes/video.html' %}
+  {% barcodes_search_form cl %}
+  {% include 'barcodes/video.html' %}
 {% endblock %}
