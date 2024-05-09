@@ -38,8 +38,11 @@ compare_reqs:
 	@git diff --no-index ${tmp1} ${tmp2}
 
 compare_reqs_comm:
-	@cat *requirements.txt | sort > ${tmp1}
+	@cat dev/*requirements.txt *requirements.txt | sort > ${tmp1}
 	@pip freeze | sort > ${tmp2}
 	@comm -13 ${tmp1} ${tmp2}
+
+squash:
+	@$(SHELL) dev/squash.sh $(app)
 
 -include dev/makefile.deploy

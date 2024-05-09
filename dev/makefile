@@ -9,7 +9,7 @@ define getrunserver
 	|| echo runserver
 endef
 
-RUNSERVER_CMD=$(shell $(getrunserver))
+RUNSERVER_CMD:=$(or $(RUNSERVER_CMD),$(shell $(getrunserver)))
 
 all: server lint
 
