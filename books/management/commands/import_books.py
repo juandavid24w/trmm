@@ -30,6 +30,12 @@ def get_author_names(raw):
     return [name + "." if len(name) == 1 else name for name in names]
 
 
+def get_code(raw):
+    if pd.isnull(raw):
+        return None
+    words = raw.split()
+    return next(word for word in words if re.search(r"\d+", word))
+
 class Command(BaseCommand):
     help = "Import books from csv"
 
@@ -73,7 +79,7 @@ class Command(BaseCommand):
             )
 
             book.save()
-            book_code = row["etiqueta"]
+            book_code = get_code(row["etiqueta"])
 
             for i in range(
                 1 if pd.isnull(row["exemplares"]) else int(row["exemplares"])

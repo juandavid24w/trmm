@@ -20,14 +20,14 @@ reset_db:
 	rm -rf */migrations/*
 	git restore */migrations/
 	$(venv); ./manage.py migrate
-	$(venv); ./manage.py makemigrations books profiles loans
+	$(venv); ./manage.py makemigrations books profiles loans labels
 	$(venv); ./manage.py makemigrations site_configuration notifications
 	$(venv); ./manage.py migrate
 	$(venv); DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser \
 		--noinput --username "admin" --email ""
-	$(venv); ./manage.py import_profiles
 	$(venv); ./manage.py shell < dev/setup.py
 	$(venv); ./manage.py import_books
+	$(venv); ./manage.py import_profiles
 
 tmp2 := $(shell mktemp)
 tmp1 := $(shell mktemp)

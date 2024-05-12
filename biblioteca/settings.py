@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "django_object_actions",
     "notifications",
     "colorfield",
+    "labels",
 ] + (
     [
         "django_extensions",
@@ -178,7 +179,7 @@ TINYMCE_DEFAULT_CONFIG = {
     "resize": "both",
     "plugins": "advlist,autolink,lists,link,image,charmap,print,preview,anchor,"
     "searchreplace,visualblocks,code,fullscreen,insertdatetime,media,table,paste,"
-    "code,help,wordcount",
+    "help,wordcount",
     "license_key": "gpl",
 }
 

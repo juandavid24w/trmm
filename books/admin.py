@@ -16,6 +16,7 @@ from unidecode import unidecode
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
 from biblioteca.admin import public_site
+from labels.models import LabelPageConfiguration, LabelPrint
 from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
 from public_admin.admin import PublicModelAdminMixin
@@ -65,9 +66,44 @@ class UnaccentSearchMixin:
         return super().get_search_fields(request)
 
 
-class SpecimenAdmin(UnaccentSearchMixin, HiddenAdminMixin, admin.ModelAdmin):
+class SpecimenIdSearchMixin:
+    def get_search_results(self, request, queryset, search_term):
+        qs, has_dups = super().get_search_results(
+            request, queryset, search_term
+        )
+
+        if re.match(r"\d+", search_term):
+            request.search_specimen_id = True
+            new_qs, new_has_dups = super().get_search_results(
+                request, queryset, str(int(search_term, base=10))
+            )
+            request.search_specimen_id = False
+
+            print(str(int(search_term, base=10)))
+            print(new_qs)
+            print(new_qs[0].specimens.all()[0].id)
+            print("_____________________")
+
+            qs |= new_qs
+            has_dups = has_dups or new_has_dups
+
+        return qs, has_dups
+
+    def get_search_fields(self, request):
+        if getattr(request, "search_specimen_id", False):
+            return [self.specimen_id_field]
+        return super().get_search_fields(request)
+
+
+class SpecimenAdmin(
+    SpecimenIdSearchMixin,
+    UnaccentSearchMixin,
+    HiddenAdminMixin,
+    admin.ModelAdmin,
+):
     canonical_isbn_field = "book__canonical_isbn"
     unaccent_search_fields = ("book__unaccent_title", "book__unaccent_author")
+    specimen_id_field = "id"
 
     def change_view(
         self, request, object_id, form_url="", extra_context=None
@@ -77,6 +113,7 @@ class SpecimenAdmin(UnaccentSearchMixin, HiddenAdminMixin, admin.ModelAdmin):
         return redirect("admin:books_book_change", args=(obj.book.pk,))
 
     search_fields = [
+        "id",
         "book__isbn",
         "book__title",
         "book__author_last_name",
@@ -84,13 +121,14 @@ class SpecimenAdmin(UnaccentSearchMixin, HiddenAdminMixin, admin.ModelAdmin):
         "book__publisher",
         "book__classification__name",
         "book__classification__abbreviation",
+        "book__code",
     ]
 
 
 class SpecimenInline(admin.TabularInline):
-    fields = ["number", "code", "loan", "available"]
-    readonly_fields = ["number", "code", "loan", "available"]
     model = Specimen
+    fields = ["number", "loan", "available"]
+    readonly_fields = ["number", "loan", "available"]
     extra = 0
 
     def has_add_permission(self, *args, **kwargs):
@@ -117,11 +155,13 @@ class BookAdminForm(forms.ModelForm):
 
 
 class BookAdmin(
+    SpecimenIdSearchMixin,
     UnaccentSearchMixin,
     AdminButtonsMixin,
     BarcodeSearchBoxMixin,
     admin.ModelAdmin,
 ):
+
     form = BookAdminForm
     inlines = [SpecimenInline]
     fields = [
@@ -131,12 +171,19 @@ class BookAdmin(
         "author_first_names",
         "publisher",
         "classification",
+        "code",
         "creation_date",
         "last_modified",
         "units",
         "available",
     ]
-    readonly_fields = ["units", "creation_date", "last_modified", "available"]
+    readonly_fields = [
+        "units",
+        "creation_date",
+        "last_modified",
+        "available",
+        "code",
+    ]
     search_fields = (
         "isbn",
         "title",
@@ -145,6 +192,8 @@ class BookAdmin(
         "publisher",
         "classification__name",
         "classification__abbreviation",
+        "code",
+        "specimens__id",
     )
     unaccent_search_fields = ("unaccent_author", "unaccent_title")
     canonical_isbn_field = "canonical_isbn"
@@ -167,6 +216,9 @@ class BookAdmin(
             custom_title_filter_factory(_("localização")),
         ),
     )
+    actions = ["make_labels"]
+    changelist_actions = ["make_labels"]
+    specimen_id_field = "specimens__id"
 
     @admin.display(
         description=_("Localização"), ordering="classification__location"
@@ -191,6 +243,40 @@ class BookAdmin(
     @admin.display(description=_("Disponível"), boolean=True)
     def available(self, obj):
         return obj.available
+
+    @admin.action(description=_("Criar etiquetas"))
+    def make_labels(self, request, queryset):
+        if not request.user.has_perm(
+            "labels.add_labelprint"
+        ) or not request.user.has_perm("labels.add_labelprint"):
+            messages.error(
+                request,
+                _("Usuário não tem permissão de criação de etiquetas"),
+            )
+            return None
+
+        specimens = Specimen.objects.filter(book__in=queryset)
+        configuration = LabelPageConfiguration.get_default()
+
+        if not configuration:
+            messages.error(
+                request,
+                _(
+                    "Deve haver ao menos uma configuração de página de "
+                    "etiquetas para se criar um arquivo de etiquetas."
+                ),
+            )
+            return None
+
+        obj = LabelPrint(configuration=configuration)
+
+        obj.save()
+        obj.specimens.add(*specimens)
+        obj.save()  # Save again to generate pdf file
+
+        url = reverse("admin:labels_labelprint_change", args=(obj.pk,))
+
+        return redirect(url)
 
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
@@ -258,6 +344,16 @@ class BookAdmin(
             return redirect(f"{href}?{get_params}")
 
         return super().add_view(request, form_url, extra_context)
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        if not request.user.has_perm(
+            "labels.add_labelprint"
+        ) or not request.user.has_perm("labels.change_labelprint"):
+            del actions["make_labels"]
+
+        return actions
 
 
 class ClassificationAdmin(admin.ModelAdmin):

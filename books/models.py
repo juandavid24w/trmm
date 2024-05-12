@@ -102,18 +102,11 @@ class Book(models.Model):
         on_delete=models.SET_NULL,
         verbose_name=_("Classificação"),
     )
-    title_first_letter = models.CharField(
-        max_length=1,
-        verbose_name=_("Primeira letra do título"),
-        help_text=_(
-            "Primeira letra da primeira palavra do título que não é um artigo"
-        ),
-    )
     code = models.CharField(
         max_length=50,
-        verbose_name=_("Código parcial do livro"),
-        help_text=_("Código do livro sem o número de exemplar"),
+        verbose_name=_("Código cutter"),
         null=True,
+        editable=False,
     )
     creation_date = models.DateTimeField(
         auto_now_add=True, verbose_name=_("Data de criação")
@@ -125,27 +118,31 @@ class Book(models.Model):
     def units(self):
         return self.specimens.count()
 
-    def calc_title_first_letter(self):
+    def calc_title_first_letter(self, n=1):
         words = self.title.split()
         while words[0].lower() in ARTICLES:
             del words[0]
-        return words[0][0].lower()
+        return unidecode(words[0][:n].lower())
 
     def calc_code(self):
-        cl = self.classification.name
-        loc = self.classification.location.name
         cutcode = cutter.get(self.author_last_name)
-        title = self.title_first_letter
         author = self.author_last_name[0].upper()
 
-        return f"{cl} {author}{cutcode}{title}%s {loc}"
+        n = 1
+        while self.__class__.objects.filter(
+            code=(
+                code := f"{author}{cutcode}{self.calc_title_first_letter(n)}"
+            )
+        ).exists():
+            n += 1
+
+        return code
 
     @property
     def author(self):
         return f"{self.author_first_names} {self.author_last_name}"
 
     def save(self, *args, **kwargs):
-        self.title_first_letter = self.calc_title_first_letter()
         if not self.code:
             self.code = self.calc_code()
         self.canonical_isbn = ean13(canonical(self.isbn))
@@ -166,7 +163,8 @@ class Book(models.Model):
         verbose_name = _("Livro")
         verbose_name_plural = _("Livros")
         constraints = [
-            models.UniqueConstraint(fields=("isbn",), name="unique isbn"),
+            models.UniqueConstraint(fields=("isbn",), name="unique_isbn"),
+            models.UniqueConstraint(fields=("code",), name="unique_code"),
         ]
 
 
@@ -198,9 +196,6 @@ class Specimen(models.Model):
         verbose_name=_("Livro"),
         related_name="specimens",
     )
-    code = models.CharField(
-        max_length=50, verbose_name=_("Código"), default="", blank=True
-    )
 
     @property
     def available(self):
@@ -218,8 +213,6 @@ class Specimen(models.Model):
         cls = self.__class__
         qs = cls.objects.filter(book=self.book)
         self.number = max(o.number for o in qs) + 1 if qs else 1
-        if not self.code:
-            self.code = self.book.code % self.number
 
         super().save(*args, **kwargs)
 
