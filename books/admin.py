@@ -80,11 +80,6 @@ class SpecimenIdSearchMixin:
             )
             request.search_specimen_id = False
 
-            print(str(int(search_term, base=10)))
-            print(new_qs)
-            print(new_qs[0].specimens.all()[0].id)
-            print("_____________________")
-
             qs |= new_qs
             has_dups = has_dups or new_has_dups
 

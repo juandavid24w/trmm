@@ -1,0 +1,6 @@
+{% extends "admin/change_form.html" %}
+
+{% block extrahead %}
+    {% if csvio_data %}{{ csvio_data|json_script:"csvio-data" }}{% endif %}
+    {{ block.super }}
+{% endblock %}

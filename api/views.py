@@ -4,9 +4,9 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 
 from books.models import Book, Classification, Location
 from books.serializers import (
-    BookSerializer,
-    ClassificationSerializer,
-    LocationSerializer,
+    BookHyperlinkedSerializer,
+    ClassificationHyperlinkedSerializer,
+    LocationHyperlinkedSerializer,
 )
 from profiles.serializers import UserSerializer
 
@@ -15,19 +15,19 @@ User = get_user_model()
 
 class BookViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Book.objects.all()
-    serializer_class = BookSerializer
+    serializer_class = BookHyperlinkedSerializer
     permission_classes = [AllowAny]
 
 
 class ClassificationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Classification.objects.all()
-    serializer_class = ClassificationSerializer
+    serializer_class = ClassificationHyperlinkedSerializer
     permission_classes = [AllowAny]
 
 
 class LocationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Location.objects.all()
-    serializer_class = LocationSerializer
+    serializer_class = LocationHyperlinkedSerializer
     permission_classes = [AllowAny]
 
 

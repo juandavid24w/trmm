@@ -87,6 +87,7 @@ def fix_keys(values, split_author=True):
         if key == "ISBN-13":
             new["isbn"] = value
         elif key == "Authors" and isinstance(value, list):
+            value = list(set(value))
             if split_author:
                 last, first = get_last_first(value)
                 new["author_last_name"] = last

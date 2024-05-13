@@ -7,6 +7,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import get_error_detail
 
+import csvio
+
 from .models import Email, Profile
 
 User = get_user_model()
@@ -178,3 +180,6 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
         ]
+
+
+csvio.register(User, UserSerializer)

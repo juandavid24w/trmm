@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "labels",
     "rest_framework",
     "api",
+    "csvio",
 ] + (
     [
         "django_extensions",
@@ -211,3 +212,5 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
 }
+
+CSVIO_DEFAULT_MODEL = "books.book"
