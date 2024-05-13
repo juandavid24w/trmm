@@ -95,7 +95,12 @@ class Book(models.Model):
     unaccent_author = models.CharField(
         max_length=150, verbose_name=_("Autor sem acento"), editable=False
     )
-    publisher = models.CharField(max_length=300, verbose_name=_("Editora"))
+    publisher = models.CharField(
+        max_length=300,
+        verbose_name=_("Editora"),
+        null=True,
+        blank=True,
+    )
     classification = models.ForeignKey(
         Classification,
         null=True,
