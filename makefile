@@ -15,14 +15,19 @@ lint:
 
 venv=. venv/bin/activate
 
-reset_db:
+DB_APPS=books profiles loans labels site_configuration notifications
+
+remove_db:
 	rm -f db.sqlite3
+
+reset_migrations:
 	rm -rf */migrations/*
-	git restore */migrations/
+	git restore $(addsuffix /migrations/*, $(DB_APPS))
 	$(venv); ./manage.py migrate
-	$(venv); ./manage.py makemigrations books profiles loans labels
-	$(venv); ./manage.py makemigrations site_configuration notifications
+	$(venv); ./manage.py makemigrations $(DB_APPS)
 	$(venv); ./manage.py migrate
+
+reset_db: remove_db reset_migrations
 	$(venv); DJANGO_SUPERUSER_PASSWORD=admin ./manage.py createsuperuser \
 		--noinput --username "admin" --email ""
 	$(venv); ./manage.py shell < dev/setup.py
