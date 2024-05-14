@@ -22,6 +22,7 @@ from profiles.admin import HiddenAdminMixin
 from public_admin.admin import PublicModelAdminMixin
 
 from . import isbn
+from .actions import change_classification
 from .models import Book, Classification, Location, Specimen
 from .widgets import ISBNSearchInput
 
@@ -216,7 +217,7 @@ class BookAdmin(
             custom_title_filter_factory(_("localização")),
         ),
     )
-    actions = ["make_labels"]
+    actions = ["make_labels", change_classification]
     changelist_actions = ["make_labels"]
     specimen_id_field = "specimens__id"
 
