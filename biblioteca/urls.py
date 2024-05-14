@@ -72,5 +72,6 @@ urlpatterns = [
     path("accounts/login/", RedirectView.as_view(url="/admin/")),
     path("admin/", admin.site.urls),
     path("tinymce/", include("tinymce.urls")),
+    path("api/", include("api.urls")),
     path("", public_site.urls),
 ]
