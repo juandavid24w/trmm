@@ -155,7 +155,9 @@ class Book(models.Model):
     def save(self, *args, **kwargs):
         if not self.code:
             self.code = self.calc_code()
-        self.canonical_isbn = ean13(canonical(self.isbn))
+        if self.isbn:
+            self.isbn = canonical(self.isbn)
+            self.canonical_isbn = ean13(self.isbn)
         self.unaccent_author = unidecode(
             f"{self.author_first_names} {self.author_last_name}"
         )
