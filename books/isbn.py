@@ -67,28 +67,32 @@ def get_last_first(authors):
 
     for i, author in enumerate(authors):
         names = [name.title() for name in author.split()]
-        if i == 0:
-            last = names.pop()
-            if names:
-                first.append(" ".join(names))
-        else:
-            if len(names) > 1:
-                first.append(f"{names[-1]}, {' '.join(names[:-1])}")
+        if names:
+            if i == 0:
+                last = names.pop()
+                if names:
+                    first.append(" ".join(names))
             else:
-                first.append(names[-1])
+                if len(names) > 1:
+                    first.append(f"{names[-1]}, {' '.join(names[:-1])}")
+                else:
+                    first.append(names[-1])
 
-    return last, "; ".join(first)
+    return last or "", "; ".join(first)
 
 
-def fix_keys(values):
+def fix_keys(values, split_author=True):
     new = {}
     for key, value in values.items():
         if key == "ISBN-13":
             new["isbn"] = value
         elif key == "Authors" and isinstance(value, list):
-            last, first = get_last_first(value)
-            new["author_last_name"] = last
-            new["author_first_names"] = first
+            if split_author:
+                last, first = get_last_first(value)
+                new["author_last_name"] = last
+                new["author_first_names"] = first
+            else:
+                new["author"] = "; ".join(set(value))
         elif key.lower() in book_fields:
             new[key.lower()] = value
         else:
@@ -97,14 +101,14 @@ def fix_keys(values):
     return new
 
 
-def search(isbn):
+def search(isbn, split_author=True):
     try:
         validate_isbn(isbn)
     except ValidationError as e:
         return None, e.messages
     try:
         return (
-            fix_keys(get_isbn_data(isbn)),
+            fix_keys(get_isbn_data(isbn), split_author),
             [_("Informações carregadas do ISBN corretamente")],
         )
     except ISBNLibException:

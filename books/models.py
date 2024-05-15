@@ -47,6 +47,7 @@ class Location(models.Model):
     class Meta:
         verbose_name = _("Localização")
         verbose_name_plural = _("Localizações")
+        ordering = ["name"]
 
 
 class Classification(models.Model):
@@ -66,6 +67,7 @@ class Classification(models.Model):
     class Meta:
         verbose_name = _("Classificação")
         verbose_name_plural = _("Classificações")
+        ordering = ["abbreviation"]
 
 
 class Book(models.Model):
@@ -87,7 +89,10 @@ class Book(models.Model):
         verbose_name=_("Título semacentos"), editable=False
     )
     author_first_names = models.CharField(
-        max_length=100, verbose_name=_("Primeiros nomes do autor")
+        max_length=100,
+        verbose_name=_("Primeiros nomes do autor"),
+        null=True,
+        blank=True,
     )
     author_last_name = models.CharField(
         max_length=50, verbose_name=_("Último nome do autor")
