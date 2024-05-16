@@ -13,18 +13,21 @@ from django.utils.translation import gettext_lazy as _
 
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
+from default_object.admin import DefaultObjectAdminMixin
 
 from .filters import LoanStatusFilter
 from .models import Loan, Period, Renewal
 
 
 @admin.register(Period)
-class PeriodAdmin(admin.ModelAdmin):
+class PeriodAdmin(DefaultObjectAdminMixin, admin.ModelAdmin):
     list_display = ["description", "days"]
 
 
 @admin.register(Renewal)
-class RenewalAdmin(SortableAdminMixin, admin.ModelAdmin):
+class RenewalAdmin(
+    DefaultObjectAdminMixin, SortableAdminMixin, admin.ModelAdmin
+):
     list_display = ["description", "days"]
 
 

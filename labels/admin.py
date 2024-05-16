@@ -3,12 +3,13 @@ from django.http import FileResponse
 from django.utils.translation import gettext_lazy as _
 
 from admin_buttons.admin import AdminButtonsMixin
+from default_object.admin import DefaultObjectAdminMixin
 
 from .models import LabelPageConfiguration, LabelPrint
 
 
 @admin.register(LabelPageConfiguration)
-class LabelPageConfigurationAdmin(admin.ModelAdmin):
+class LabelPageConfigurationAdmin(DefaultObjectAdminMixin, admin.ModelAdmin):
     pass
 
 
