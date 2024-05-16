@@ -76,7 +76,7 @@ class Book(models.Model):
         validators=[validate_isbn],
         verbose_name=_("ISBN"),
         null=True,
-        blank=False,
+        blank=True,
     )
     canonical_isbn = models.CharField(
         max_length=13,
