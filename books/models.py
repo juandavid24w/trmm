@@ -86,22 +86,22 @@ class Book(models.Model):
     )
     title = models.TextField(verbose_name=_("Título"))
     unaccent_title = models.TextField(
-        verbose_name=_("Título semacentos"), editable=False
+        verbose_name=_("Título sem acentos"), editable=False
     )
     author_first_names = models.CharField(
-        max_length=100,
+        max_length=1024,
         verbose_name=_("Primeiros nomes do autor"),
         null=True,
         blank=True,
     )
     author_last_name = models.CharField(
-        max_length=50, verbose_name=_("Último nome do autor")
+        max_length=255, verbose_name=_("Último nome do autor")
     )
     unaccent_author = models.CharField(
-        max_length=150, verbose_name=_("Autor sem acento"), editable=False
+        max_length=255, verbose_name=_("Autor sem acento"), editable=False
     )
     publisher = models.CharField(
-        max_length=300,
+        max_length=255,
         verbose_name=_("Editora"),
         null=True,
         blank=True,
