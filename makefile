@@ -1,19 +1,18 @@
 MAKEFLAGS:= --no-print-directory
 SHELL=bash
-TEST_APPS=profiles
 
 .PHONY: dev test lint init reset_db compare_reqs compare_reqs_comm
+venv=. venv/bin/activate
 
 dev:
 	@$(MAKE) -f dev/makefile
 
 test:
-	@. venv/bin/activate && ./manage.py test $(TEST_APPS)
+	$(venv); ./manage.py test
 
 lint:
 	@$(SHELL) dev/lint.sh
 
-venv=. venv/bin/activate
 
 DB_APPS=books profiles loans labels site_configuration notifications
 
