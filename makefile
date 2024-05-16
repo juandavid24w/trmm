@@ -47,7 +47,4 @@ compare_reqs_comm:
 	@pip freeze | sort > ${tmp2}
 	@comm -13 ${tmp1} ${tmp2}
 
-squash:
-	@$(SHELL) dev/squash.sh $(app)
-
 -include dev/makefile.deploy
