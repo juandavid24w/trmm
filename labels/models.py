@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from fpdf.fpdf import PAGE_FORMATS
 
 from books.models import Specimen
+from default_object.models import DefaultObjectMixin
 
 from .labels import create, create_file
 
@@ -36,7 +37,7 @@ def label_name():
         "date": timezone.now().strftime("%y.%m.%d")
     }
 
-class LabelPageConfiguration(models.Model):
+class LabelPageConfiguration(DefaultObjectMixin, models.Model):
     name = models.CharField(
         max_length=127,
         verbose_name=_("Nome"),
@@ -81,10 +82,6 @@ class LabelPageConfiguration(models.Model):
     font_size = models.FloatField(
         verbose_name=_("Tamanho da fonte de informações"), default=8
     )
-
-    @classmethod
-    def get_default(cls):
-        return cls.objects.first()
 
     def __str__(self):
         return self.name

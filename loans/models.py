@@ -10,12 +10,19 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from books.models import Specimen
+from default_object.models import DefaultObjectMixin
 
 
-class Period(models.Model):
-    description = models.TextField(verbose_name=_("Descrição"), blank=True)
+class Period(DefaultObjectMixin, models.Model):
+    description = models.TextField(
+        verbose_name=_("Descrição"),
+        blank=True,
+        default=_("Empréstimo normal"),
+    )
     days = models.IntegerField(
-        verbose_name=_("Número de dias"), validators=[MinValueValidator(0)]
+        verbose_name=_("Número de dias"),
+        validators=[MinValueValidator(0)],
+        default=15,
     )
 
     class Meta:
@@ -25,15 +32,17 @@ class Period(models.Model):
     def __str__(self):
         return _("%s (%s dias)") % (self.description, self.days)
 
-    @classmethod
-    def get_default(cls):
-        return cls.objects.all().first()
 
-
-class Renewal(models.Model):
-    description = models.TextField(verbose_name=_("Descrição"), blank=True)
+class Renewal(DefaultObjectMixin, models.Model):
+    description = models.TextField(
+        verbose_name=_("Descrição"),
+        blank=True,
+        default=_("Primeira renovação"),
+    )
     days = models.IntegerField(
-        verbose_name=_("Número de dias"), validators=[MinValueValidator(0)]
+        verbose_name=_("Número de dias"),
+        validators=[MinValueValidator(0)],
+        default=15,
     )
     order = models.PositiveIntegerField(
         default=0,
