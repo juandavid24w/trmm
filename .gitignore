@@ -13,3 +13,5 @@ cert.crt
 cert.key
 /.env
 /dev/makefile.variables
+/data
+/todo
