@@ -48,7 +48,7 @@ def dump_db(obj):
 
     try:
         with ZipFile(settings.MEDIA_ROOT / filename, "w") as zipfile:
-            zipfile.write(json_fn)
+            zipfile.write(json_fn, json_fn.name)
     except OSError as e:
         raise BackupError(str(error).split("\n")) from e
 

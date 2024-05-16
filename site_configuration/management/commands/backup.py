@@ -12,10 +12,12 @@ class Command(BaseCommand):
         name = BackupAdmin.get_available_name(
             _("%(date)s_backup_automatico%(n)s")
         )
-        Backup(
+        backup = Backup(
             name=name,
             do_db_dump=True,
             do_media_dump=True,
-        ).save()
+        )
+        backup.clean()
+        backup.save()
 
         self.stdout.write(self.style.SUCCESS(_("Backup criado com sucesso")))
