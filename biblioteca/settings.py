@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "api",
     "csvio",
+    "default_object",
 ] + (
     [
         "django_extensions",
