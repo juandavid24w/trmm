@@ -128,11 +128,19 @@ class Book(models.Model):
     def units(self):
         return self.specimens.count()
 
-    def calc_title_first_letter(self, n=1):
+    def calc_title_first_letters(self, n=1):
         words = self.title.split()
         while words[0].lower() in ARTICLES:
             del words[0]
-        return unidecode(words[0][:n].lower())
+
+        letters = "".join(words)
+        m = n - len(letters)
+        first_letters = unidecode(letters[:n].lower())
+        if m > 0:
+            first_letters += str(m)
+
+        return first_letters
+
 
     def calc_code(self):
         cutcode = cutter.get(self.author_last_name)
@@ -141,7 +149,7 @@ class Book(models.Model):
         n = 1
         while self.__class__.objects.filter(
             code=(
-                code := f"{author}{cutcode}{self.calc_title_first_letter(n)}"
+                code := f"{author}{cutcode}{self.calc_title_first_letters(n)}"
             )
         ).exists():
             n += 1
