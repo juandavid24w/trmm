@@ -1,9 +1,12 @@
 from django.test import TestCase
 
-from ..models import Book, Classification, Location, Specimen
+from ..models import Book, Classification, Collection, Location, Specimen
 
 
 def create_test_catalog():
+    col1 = Collection.get_default()
+    col2 = Collection.objects.create(name="collection 2")
+
     l1 = Location.objects.create(name="Loc1", color="#000000")
     l2 = Location.objects.create(name="Loc2", color="#ffffff")
 
@@ -35,6 +38,7 @@ def create_test_catalog():
         author_last_name="Tchápek",
         publisher="Editora",
         classification=c1,
+        collection=col1,
     )
     for _ in range(4):
         book.specimens.create()
@@ -46,6 +50,7 @@ def create_test_catalog():
         author_last_name="Branco",
         publisher="Tecnoprint",
         classification=c1,
+        collection=col1,
     )
 
     book = Book.objects.create(
@@ -55,6 +60,7 @@ def create_test_catalog():
         author_last_name="Press",
         publisher="Companhia Das Letras",
         classification=c2,
+        collection=col2,
     )
     for _ in range(2):
         book.specimens.create()
@@ -66,6 +72,7 @@ def create_test_catalog():
         author_last_name="Soustelle",
         publisher="Editora Itatiaia",
         classification=c3,
+        collection=col2,
     )
     for _ in range(8):
         book.specimens.create()
@@ -77,6 +84,7 @@ def create_test_catalog():
         author_last_name="Camus",
         publisher="Edições Bestbolso",
         classification=c4,
+        collection=col1,
     )
     for _ in range(3):
         book.specimens.create()

@@ -9,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 from isbnlib import canonical, ean13
 from unidecode import unidecode
 
+from default_object.models import DefaultObjectMixin
+
 from . import cutter
 from .language import ARTICLES
 from .validators import validate_isbn
@@ -48,6 +50,21 @@ class Location(models.Model):
         verbose_name = _("Localização")
         verbose_name_plural = _("Localizações")
         ordering = ["name"]
+
+
+class Collection(DefaultObjectMixin, models.Model):
+    name = models.CharField(
+        max_length=128,
+        verbose_name=_("Nome"),
+        default=_("Acervo regular"),
+    )
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = _("Acervo")
+        verbose_name_plural = _("Acervos")
 
 
 class Classification(models.Model):
@@ -111,6 +128,13 @@ class Book(models.Model):
         null=True,
         on_delete=models.SET_NULL,
         verbose_name=_("Classificação"),
+    )
+    collection = models.ForeignKey(
+        Collection,
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Acervo"),
+        default=Collection.get_default_pk,
     )
     code = models.CharField(
         max_length=50,

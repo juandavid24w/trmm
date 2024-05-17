@@ -16,6 +16,7 @@ from unidecode import unidecode
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
 from biblioteca.admin import public_site
+from default_object.admin import DefaultObjectAdminMixin
 from labels.models import LabelPageConfiguration, LabelPrint
 from loans.util import loan_link
 from profiles.admin import HiddenAdminMixin
@@ -23,7 +24,7 @@ from public_admin.admin import PublicModelAdminMixin
 
 from . import isbn
 from .actions import change_classification
-from .models import Book, Classification, Location, Specimen
+from .models import Book, Classification, Collection, Location, Specimen
 from .widgets import ISBNSearchInput
 
 mark_safe_lazy = lazy(mark_safe, str)
@@ -167,6 +168,7 @@ class BookAdmin(
         "author_first_names",
         "publisher",
         "classification",
+        "collection",
         "code",
         "creation_date",
         "last_modified",
@@ -359,13 +361,16 @@ class ClassificationAdmin(admin.ModelAdmin):
     def location_color(self, obj):
         return obj.location.color_icon()
 
-
 class LocationAdmin(admin.ModelAdmin):
     list_display = ["__str__", "color_icon"]
 
     @admin.display(description=_("Cor"))
     def color_icon(self, obj):
         return obj.color_icon()
+
+
+class CollectionAdmin(DefaultObjectAdminMixin, admin.ModelAdmin):
+    pass
 
 
 class PublicBookAdmin(PublicModelAdminMixin, BookAdmin):
@@ -380,11 +385,17 @@ class PublicLocationAdmin(PublicModelAdminMixin, LocationAdmin):
     pass
 
 
+class PublicCollectionAdmin(PublicModelAdminMixin, CollectionAdmin):
+    pass
+
+
 admin.site.register(Specimen, SpecimenAdmin)
 admin.site.register(Book, BookAdmin)
 admin.site.register(Location, LocationAdmin)
 admin.site.register(Classification, ClassificationAdmin)
+admin.site.register(Collection, CollectionAdmin)
 
 public_site.register(Book, PublicBookAdmin)
 public_site.register(Location, PublicLocationAdmin)
 public_site.register(Classification, PublicClassificationAdmin)
+public_site.register(Collection, PublicCollectionAdmin)

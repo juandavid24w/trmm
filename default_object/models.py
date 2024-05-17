@@ -22,6 +22,14 @@ class DefaultObjectMixin(models.Model):
                     pass
             return obj
 
+    @classmethod
+    def get_default_pk(cls):
+        obj = cls.get_default()
+        if obj:
+            return obj.pk
+
+        return obj
+
     def save(self, *args, **kwargs):
         if self.is_default:
             try:
