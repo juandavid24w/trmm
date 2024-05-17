@@ -1,6 +1,6 @@
 import re
 
-from adminsortable2.admin import SortableAdminMixin
+from adminsortable2.admin import SortableAdminMixin, SortableStackedInline
 from django.contrib import admin, messages
 from django.db import models
 from django.forms import CheckboxSelectMultiple
@@ -19,16 +19,51 @@ from .filters import LoanStatusFilter
 from .models import Loan, Period, Renewal
 
 
+class RenewalInline(SortableStackedInline):
+    model = Renewal
+    extra = 0
+
+
 @admin.register(Period)
-class PeriodAdmin(DefaultObjectAdminMixin, admin.ModelAdmin):
-    list_display = ["description", "days"]
-
-
-@admin.register(Renewal)
-class RenewalAdmin(
-    DefaultObjectAdminMixin, SortableAdminMixin, admin.ModelAdmin
+class PeriodAdmin(
+    SortableAdminMixin, DefaultObjectAdminMixin, admin.ModelAdmin
 ):
     list_display = ["description", "days"]
+    autocomplete_fields = ["books", "specimens", "users", "groups"]
+    filter_horizontal = (
+        "collections",
+        "locations",
+        "classifications",
+    )
+    inlines = [RenewalInline]
+    fieldsets = [
+        (None, {"fields": ("description", "days", "is_default")}),
+        (
+            _("Condições"),
+            {
+                "fields": (
+                    "logical_operator",
+                    "collections",
+                    "locations",
+                    "classifications",
+                    "groups",
+                    "users",
+                    "books",
+                    "specimens",
+                ),
+                "description": _(
+                    "Defina as condições para que esse periodo seja "
+                    'usado. <span class="help">Na hora de salvar um '
+                    "empréstimo, vamos olhar para todos os períodos, "
+                    "um por um. O primeiro que atender a uma ou todas "
+                    "(dependendo do operador lógico) as condições "
+                    "abaixo vai ser usado. Se nenhum período atender, "
+                    "O período padrão vai ser usado.</span>"
+                ),
+                "classes": ["collapse"],
+            },
+        ),
+    ]
 
 
 @admin.action(description=_("Marcar devolução"))
@@ -42,7 +77,7 @@ def make_returned(_modeladmin, _request, queryset):
 class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
     autocomplete_fields = ["specimen", "user"]
     ordering = ["-date"]
-    readonly_fields = ["renewals", "due"]
+    readonly_fields = ["renewals", "due", "period"]
     list_display = [
         "user",
         "title",
@@ -119,16 +154,11 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             return mark_safe(f'<img src="{href}">')
         return ""
 
-    def get_changeform_initial_data(self, request):
-        from_qs = super().get_changeform_initial_data(request)
-        period = Period.get_default()
-        defaults = {
-            "date": timezone.now(),
-            **({"duration": period} if period else {}),
-        }
-
-        defaults.update(from_qs)
-        return defaults
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if obj is None:
+            return [f for f in fields if f not in self.readonly_fields]
+        return fields
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

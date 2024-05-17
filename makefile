@@ -14,7 +14,8 @@ lint:
 	@$(SHELL) dev/lint.sh
 
 
-DB_APPS=books profiles loans labels site_configuration notifications
+DB_APPS = books profiles loans labels site_configuration notifications
+DB_APPS += api csvio
 
 remove_db:
 	rm -f db.sqlite3
@@ -38,12 +39,12 @@ tmp1 := $(shell mktemp)
 
 compare_reqs:
 	@cat dev/*requirements.txt *requirements.txt | sort > ${tmp1}
-	@pip freeze | sort > ${tmp2}
+	@$(venv); pip freeze | sort > ${tmp2}
 	@git diff --no-index ${tmp1} ${tmp2}
 
 compare_reqs_comm:
 	@cat dev/*requirements.txt *requirements.txt | sort > ${tmp1}
-	@pip freeze | sort > ${tmp2}
+	@$(venv) pip freeze | sort > ${tmp2}
 	@comm -13 ${tmp1} ${tmp2}
 
 -include dev/makefile.deploy
