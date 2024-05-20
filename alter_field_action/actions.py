@@ -34,6 +34,9 @@ def alter_field_action(model, field_name, form_field=None):
             super().__init__(*args, **kwargs)
             self.fields[field_name] = form_field
 
+        class Media:
+            js = ["aham.js"]
+
     @action(
         permissions=["change"],
         # Translators: example: alter classification
