@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "api",
     "csvio",
     "default_object",
+    "alter_field_action",
 ] + (
     [
         "django_extensions",

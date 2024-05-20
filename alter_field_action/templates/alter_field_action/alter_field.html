@@ -1,0 +1,31 @@
+{% extends 'admin/base_site.html' %}
+{% load i18n l10n static %}
+
+{% block extrahead %}
+    {{ block.super}}
+    <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+{% endblock %}
+
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form }}
+        <br>
+        <div class="submit-row">
+            <input type="submit" value="{{ verb }}">
+        </div>
+        <input type="hidden" name="action" value="alter_field_{{ field_name }}">
+        {% for obj in queryset %}
+            <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk|unlocalize }}">
+        {% endfor %}
+    </form>
+
+    <p>{{ changes_message }}</p>
+    <ul>
+        {% for obj in queryset %}
+            <li>{{ obj }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+

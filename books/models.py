@@ -65,6 +65,7 @@ class Collection(DefaultObjectMixin, models.Model):
     class Meta:
         verbose_name = _("Acervo")
         verbose_name_plural = _("Acervos")
+        ordering = ["name"]
 
 
 class Classification(models.Model):

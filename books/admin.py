@@ -14,6 +14,7 @@ from isbnlib import canonical, clean, ean13, get_isbnlike
 from unidecode import unidecode
 
 from admin_buttons.admin import AdminButtonsMixin
+from alter_field_action.actions import alter_field_action
 from barcodes.admin import BarcodeSearchBoxMixin
 from biblioteca.admin import public_site
 from default_object.admin import DefaultObjectAdminMixin
@@ -23,7 +24,6 @@ from profiles.admin import HiddenAdminMixin
 from public_admin.admin import PublicModelAdminMixin
 
 from . import isbn
-from .actions import change_classification
 from .models import Book, Classification, Collection, Location, Specimen
 from .widgets import ISBNSearchInput
 
@@ -213,9 +213,16 @@ class BookAdmin(
             "classification__location__name",
             custom_title_filter_factory(_("localização")),
         ),
+        (
+            "collection__name",
+            custom_title_filter_factory(_("acervo")),
+        ),
     )
-    actions = ["make_labels", change_classification]
-    changelist_actions = ["make_labels"]
+    actions = [
+        "make_labels",
+        alter_field_action(Book, "classification"),
+        alter_field_action(Book, "collection"),
+    ]
     specimen_id_field = "specimens__id"
 
     @admin.display(
