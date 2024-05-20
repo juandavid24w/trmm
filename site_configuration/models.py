@@ -65,7 +65,7 @@ class EmailConfiguration(SingletonModel):
         verbose_name=_("Host"),
         default="smtp.gmail.com",
     )
-    port = models.PositiveIntegerField(verbose_name=_("Senha"), default=587)
+    port = models.PositiveIntegerField(verbose_name=_("Porta"), default=587)
     username = models.CharField(
         max_length=128,
         verbose_name=_("Usuário"),
@@ -97,7 +97,7 @@ class EmailConfiguration(SingletonModel):
     signature = HTMLField(
         blank=True,
         null=True,
-        verbose_name=_("Assinatura dos email"),
+        verbose_name=_("Assinatura dos emails"),
     )
 
     def __str__(self):
