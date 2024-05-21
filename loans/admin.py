@@ -95,6 +95,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         ("user", admin.RelatedOnlyFieldListFilter),
     ]
     search_fields = [
+        "user__username",
         "user__first_name",
         "user__last_name",
         "specimen__book__title",
@@ -255,3 +256,6 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
             "use_separator": False,
         },
     ]
+
+    class Media:
+        js = ["loans/barcode_helper.js"]
