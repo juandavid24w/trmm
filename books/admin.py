@@ -5,7 +5,7 @@ import urllib.parse
 from django import forms
 from django.contrib import admin, messages
 from django.db import models
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
@@ -101,13 +101,11 @@ class SpecimenAdmin(
     canonical_isbn_field = "book__canonical_isbn"
     unaccent_search_fields = ("book__unaccent_title", "book__unaccent_author")
     specimen_id_field = "id"
-
-    def change_view(
-        self, request, object_id, form_url="", extra_context=None
-    ):
-        obj = get_object_or_404(Specimen, pk=object_id)
-
-        return redirect("admin:books_book_change", args=(obj.book.pk,))
+    redirect_related_fields = {
+        "change": "book",
+        "delete": "book",
+        "add": "book",
+    }
 
     search_fields = [
         "id",

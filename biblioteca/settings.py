@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "csvio",
     "default_object",
     "alter_field_action",
+    "hidden_admin",
 ] + (
     [
         "django_extensions",

@@ -2,11 +2,9 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from fieldsets_with_inlines import FieldsetsInlineMixin
-
+from hidden_admin.admin import HiddenAdminMixin
 from loans.util import loan_link
 
 from .models import Email, Profile
@@ -14,13 +12,6 @@ from .models import Email, Profile
 User = get_user_model()
 admin.site.unregister(User)
 
-
-class HiddenAdminMixin:  # pylint: disable=too-few-public-methods
-    def get_model_perms(self, request):
-        """
-        Return empty perms dict thus hiding the model from admin index.
-        """
-        return {}
 
 
 class EmailInline(admin.TabularInline):
@@ -32,14 +23,11 @@ class EmailInline(admin.TabularInline):
 class ProfileAdmin(HiddenAdminMixin, admin.ModelAdmin):
     search_fields = ["user__first_name", "user__last_name", "grade"]
 
-    def change_view(
-        self, request, object_id, form_url="", extra_context=None
-    ):
-        obj = get_object_or_404(Profile, pk=object_id)
-
-        return redirect(
-            reverse("admin:auth_user_change", args=(obj.user.pk,))
-        )
+    redirect_related_field = {
+        "change": "user",
+        "add": "user",
+        "delete": "user",
+    }
 
 
 class ProfileInline(admin.TabularInline):
