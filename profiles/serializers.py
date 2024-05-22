@@ -23,7 +23,7 @@ class EmailSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ["grade"]
+        fields = ["id_number"]
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -38,11 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
             "ou não"
         ),
     )
-    grade = serializers.ChoiceField(
+    id_number = serializers.CharField(
         write_only=True,
         required=False,
         allow_blank=True,
-        choices=Profile.Grade,
     )
     groups = serializers.CharField(write_only=True, required=False)
 
@@ -57,9 +56,9 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
         try:
-            ret["grade"] = instance.profile.grade
+            ret["id_number"] = instance.profile.id_numer
         except Profile.DoesNotExist:
-            ret["grade"] = None
+            ret["id_number"] = None
 
         ret["groups"] = ",".join(
             instance.groups.values_list("name", flat=True)
@@ -133,7 +132,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         additional_emails = validated_data.pop("additional_emails", None)
-        grade = validated_data.pop("grade", None)
+        id_number = validated_data.pop("id_number", None)
         group_names = validated_data.pop("groups", None)
 
         user = User.objects.create_user(
@@ -154,8 +153,7 @@ class UserSerializer(serializers.ModelSerializer):
             for email_data in additional_emails:
                 user.additional_emails.create(**email_data)
 
-        if grade:
-            user.profile.create(grade=grade)
+        user.profile.create(id_number=id_number)
 
         return user
 
@@ -167,7 +165,7 @@ class UserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "additional_emails",
-            "grade",
+            "id_number",
             "groups",
             "is_active",
             "is_staff",

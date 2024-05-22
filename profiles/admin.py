@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from fieldsets_with_inlines import FieldsetsInlineMixin
 from hidden_admin.admin import HiddenAdminMixin
@@ -21,7 +20,7 @@ class EmailInline(admin.TabularInline):
 
 @admin.register(Profile)
 class ProfileAdmin(HiddenAdminMixin, admin.ModelAdmin):
-    search_fields = ["user__first_name", "user__last_name", "grade"]
+    search_fields = ["user__first_name", "user__last_name", "id_number"]
 
     redirect_related_field = {
         "change": "user",
@@ -35,34 +34,12 @@ class ProfileInline(admin.TabularInline):
     can_delete = False
 
 
-def change_grade(queryset, up):
-    for user in queryset:
-        try:
-            grade = Profile.Grade(user.profile.grade)
-            user.profile.grade = grade.next() if up else grade.prev()
-            user.profile.save()
-        except ValueError:
-            user.profile.grade = None
-        except ObjectDoesNotExist:
-            pass
-
-
-@admin.action(description=_("Passar para a próxima série"))
-def make_advance_grade(_modeladmin, _request, queryset):
-    change_grade(queryset, up=True)
-
-
-@admin.action(description=_("Passar para a série anterior"))
-def make_return_grade(_modeladmin, _request, queryset):
-    change_grade(queryset, up=False)
-
-
 @admin.register(User)
 class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
     add_form_template = "admin/auth/user/add_form.html"
 
     list_display = [x for x in BaseUserAdmin.list_display if x != "is_staff"]
-    list_display.insert(-1, "profile_grade")
+    list_display.insert(-1, "profile_id_number")
     list_display.append("is_moderator")
     fieldsets_with_inlines = list(BaseUserAdmin.fieldsets)
     fieldsets_with_inlines[2:2] = [
@@ -71,7 +48,6 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
         EmailInline,
     ]
     readonly_fields = ["loan"]
-    actions = [*BaseUserAdmin.actions, make_advance_grade, make_return_grade]
 
     def get_inline_instances(self, request, obj=None):
         if obj is None:
@@ -91,9 +67,9 @@ class UserAdmin(FieldsetsInlineMixin, BaseUserAdmin):
     def loan(self, obj):
         return loan_link({"user": obj.profile.pk}, _("Fazer empréstimo"))
 
-    @admin.display(description=_("Série"))
-    def profile_grade(self, obj):
-        return obj.profile.grade
+    @admin.display(description=_("Número de registro"))
+    def profile_id_number(self, obj):
+        return obj.profile.id_number
 
     @admin.display(description=_("Moderador"), boolean=True)
     def is_moderator(self, obj):

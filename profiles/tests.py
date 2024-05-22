@@ -12,38 +12,6 @@ from .models import Profile
 User = get_user_model()
 
 
-class TestGradeEnum(unittest.TestCase):
-    def test_succ_grade(self):
-        for grade, nxt in (
-            ("6EF", "7EF"),
-            ("7EF", "8EF"),
-            ("8EF", "9EF"),
-            ("9EF", "1EM"),
-            ("1EM", "2EM"),
-            ("2EM", "3EM"),
-        ):
-            self.assertEqual(
-                Profile.Grade(grade).next(), Profile.Grade(nxt), msg=grade
-            )
-
-        self.assertEqual(Profile.Grade("3EM").next(), Profile.Grade.__empty__)
-
-    def test_prev_grade(self):
-        for grade, nxt in (
-            ("7EF", "6EF"),
-            ("8EF", "7EF"),
-            ("9EF", "8EF"),
-            ("1EM", "9EF"),
-            ("2EM", "1EM"),
-            ("3EM", "2EM"),
-        ):
-            self.assertEqual(
-                Profile.Grade(grade).prev(), Profile.Grade(nxt), msg=grade
-            )
-
-        self.assertEqual(Profile.Grade("6EF").prev(), Profile.Grade.__empty__)
-
-
 def create_test_groups():
     usergroup, _ = Group.objects.get_or_create(name="Usuário")
     usergroup.permissions.add(Permission.objects.get(codename="view_book"))
@@ -110,7 +78,6 @@ def create_test_users():
     )
     user1.profile = Profile()
     user1.groups.add(usergroup)
-    user1.profile.grade = Profile.Grade.EF6
     user1.profile.save()
     user1.additional_emails.create(
         email="example@example.com",
@@ -130,7 +97,6 @@ def create_test_users():
         email="youremail@server.com",
     )
     user2.profile = Profile()
-    user2.profile.grade = Profile.Grade.EM2
     user2.profile.save()
     user2.groups.add(usergroup)
     user2.additional_emails.create(
@@ -162,7 +128,6 @@ def create_test_users():
         email="test2@example.com",
     )
     user4.profile = Profile()
-    user4.profile.grade = Profile.Grade.EM3
     user4.profile.save()
     user4.additional_emails.create(
         email="not@hmmm.com",
@@ -187,12 +152,9 @@ class ProfileTestCase(TestCase):
         profile.save()
 
         self.assertIsNotNone(user.profile)
-        self.assertEqual(user.profile.grade, Profile.Grade.__empty__)
-        user.profile.grade = Profile.Grade.EF6
         user.profile.save()
 
         user = User.objects.get(username="user_a")
-        self.assertEqual(user.profile.grade, Profile.Grade.EF6)
 
     def test_creation(self):
         create_test_users()

@@ -8,14 +8,14 @@ from ...models import Profile
 
 User = get_user_model()
 
-xlsx_file = settings.BASE_DIR / "matriz.xlsx"
+xlsx_file = settings.BASE_DIR / "data" / "matriz.xlsx"
 
 
 class Command(BaseCommand):
     help = "Import profiles from XLSX"
 
     def handle(self, *args, **options):
-        for grade in Profile.Grade:
+        for grade in ("6EF", "7EF", "8EF", "9EF", "1EM", "2EM", "3EM"):
             self.stdout.write(f"Adicionando {grade}...")
 
             df = pd.read_excel(xlsx_file, sheet_name=grade)
@@ -24,12 +24,16 @@ class Command(BaseCommand):
 
             for _, row in df.iterrows():
                 names = row[df.columns[3]].split()
-
                 email = row[df.columns[26]]
+
                 if User.objects.filter(email=email):
                     self.stdout.write(
-                        f"Usuário {' '.join(names)} já existente. Ignorando..."
+                        f"Usuário {' '.join(names)} já existente. "
+                        "Atualizando RM..."
                     )
+                    user = User.objects.get(email=email)
+                    user.profile.id_number = row["RM"]
+                    user.profile.save()
                     continue
 
 
@@ -61,7 +65,7 @@ class Command(BaseCommand):
                 )
 
                 user.set_password(password)
-                profile = Profile(user=user, grade=grade)
+                profile = Profile(user=user)
                 user.save()
                 profile.save()
 

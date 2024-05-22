@@ -4,48 +4,14 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Profile(models.Model):
-    class Grade(models.TextChoices):
-        EF6 = "6EF", _("6º ano do ensino fundamental")
-        EF7 = "7EF", _("7º ano do ensino fundamental")
-        EF8 = "8EF", _("8º ano do ensino fundamental")
-        EF9 = "9EF", _("9º ano do ensino fundamental")
-        EM1 = "1EM", _("1ª série do ensino médio")
-        EM2 = "2EM", _("2ª série do ensino médio")
-        EM3 = "3EM", _("3ª série do ensino médio")
-
-        __empty__ = None
-
-        def next(self, reverse=False):
-            cls = self.__class__
-            if reverse:
-                it = iter(reversed(cls))
-            else:
-                it = iter(cls)
-
-            while next(it) != self:
-                continue
-
-            try:
-                return next(it)
-            except StopIteration:
-                return self.__empty__
-
-        def prev(self):
-            return self.next(reverse=True)
-
-        @classmethod
-        def max_length(cls):
-            return max(map(len, cls))
-
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
-    grade = models.CharField(
-        max_length=Grade.max_length(),
-        choices=Grade,
-        default=Grade.__empty__,
+    id_number = models.CharField(
+        max_length=64,
+        verbose_name=_("Número de registro"),
+        blank=True,
         null=True,
-        verbose_name=_("Série"),
     )
 
     class Meta:
@@ -56,7 +22,7 @@ class Profile(models.Model):
         return f"Profile({self.user})"
 
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name} ({self.grade})"
+        return f"{self.user.first_name} {self.user.last_name}"
 
 
 class Email(models.Model):
