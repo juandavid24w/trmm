@@ -12,7 +12,7 @@ class NotificationAdmin(admin.ModelAdmin):
 @admin.register(NotificationLog)
 class NotificationLogAdmin(admin.ModelAdmin):
     list_display = ["user", "book", "notification", "created"]
-    fields = ["user", "book", "loan", "created"]
+    fields = ["user", "book", "notification", "loan", "created"]
     readonly_fields = fields
 
     def has_change_permission(self, *args, **kwargs):

@@ -70,7 +70,13 @@ def send_notification(loan, notification):
     # docs.djangoproject.com/en/5.0/topics/email/#preventing-header-injection
     subject = subject.replace("\n", " ")
 
+    if mailconf.from_name:
+        from_email = f"{mailconf.from_name} <{mailconf.from_email}>"
+    else:
+        from_email = mailconf.from_email
+
     recipient_list = get_recipient_list(loan.user)
+
     send_mail(
         subject,
         html2text(message),
@@ -80,7 +86,7 @@ def send_notification(loan, notification):
         fail_silently=False,
         auth_user=mailconf.username,
         auth_password=mailconf.password,
-        from_email=mailconf.from_email,
+        from_email=from_email,
     )
     NotificationLog.objects.create(loan=loan, notification=notification)
 

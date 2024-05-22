@@ -123,7 +123,7 @@ class NotificationTestCase(TestCase):
 
         self.assertEqual(len(mail.outbox), 1)
         sent = mail.outbox[0]
-        self.assertIn(self.mailconf.signature, sent.body)
+        self.assertIn(self.mailconf.signature, sent.alternatives[0][0])
         self.assertIn(notification.subject, sent.subject)
 
         emails = {

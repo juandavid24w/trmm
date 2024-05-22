@@ -91,6 +91,13 @@ class EmailConfiguration(SingletonModel):
         default=120,
         verbose_name=_("Timeout"),
     )
+    from_name = models.CharField(
+        max_length=255,
+        verbose_name=_("Nome do remetente"),
+        default=_("Biblioteca"),
+        null=True,
+        blank=True,
+    )
     from_email = models.EmailField(
         verbose_name=_("Email remetente"),
         default="admin@example.com",
