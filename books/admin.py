@@ -204,6 +204,7 @@ class BookAdmin(
         "units",
         "short_last_modified",
     )
+    ordering = ["-last_modified"]
     list_filter = (
         (
             "classification__abbreviation",

@@ -211,6 +211,7 @@ class Book(models.Model):
             models.UniqueConstraint(fields=("isbn",), name="unique_isbn"),
             models.UniqueConstraint(fields=("code",), name="unique_code"),
         ]
+        ordering = ["author_last_name", "title"]
 
 
 # pylint: disable-next=too-few-public-methods
@@ -269,3 +270,4 @@ class Specimen(models.Model):
                 fields=("number", "book"), name="unique specimen number"
             ),
         ]
+        ordering = ["book__author_last_name", "book__title", "number"]
