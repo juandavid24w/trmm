@@ -201,7 +201,6 @@ class LoanManager(models.Manager):  # pylint: disable=too-few-public-methods
 
 class Loan(models.Model):
     objects = LoanManager()
-
     specimen = models.ForeignKey(
         Specimen,
         on_delete=models.SET_NULL,

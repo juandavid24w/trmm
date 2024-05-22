@@ -1,17 +1,22 @@
 from datetime import timedelta
 from io import StringIO
 from random import choice, randint, sample, shuffle
+from unittest.mock import Mock
 
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core import mail
 from django.core.management import call_command
 from django.db.models import F
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from books.models import Specimen
 from books.tests.test_catalog import create_test_catalog
+from loans.admin import LoanAdmin
 from loans.models import Loan, Period
 from profiles.tests import create_test_users
 from site_configuration.models import EmailConfiguration
@@ -66,19 +71,42 @@ class NotificationTestCase(TestCase):
         self.specimens = list(Specimen.objects.all())
         shuffle(self.specimens)
         self.period = Period.get_default()
+        self.period.renewals.create(description="ren1", days=15, order=2)
+        self.period.renewals.create(description="ren2", days=15, order=3)
         self.out = StringIO()
+        self.rf = RequestFactory()
+        self.admin_user = User.objects.create_superuser(
+            "admin",
+            "admin@example.com",
+            "admin",
+        )
 
     def test_not_activated(self):
         call_command("notify", stdout=self.out)
         self.assertIn(_("Ignorando"), self.out.getvalue())
 
-    def mk_loan(self, date=timezone.now()):
-        return Loan.objects.create(
+    def mk_loan(self, date=timezone.now(), save=True, renewals=0):
+        assert save or not renewals
+
+        loan = Loan(
             specimen=self.specimens.pop(),
             period=self.period,
             user=choice(self.users),
             date=date,
         )
+
+        if save:
+            loan.save()
+
+        for i in range(renewals):
+            loan.renewals.create(
+                description="ren.",
+                days=15,
+                period=self.period,
+                order=i + 1,
+            )
+
+        return loan
 
     def test_send_notification(self):
         self.mk_loan()
@@ -133,16 +161,16 @@ class NotificationTestCase(TestCase):
             yes.append(self.mk_loan(maxm))
 
             ns = len(self.specimens)
-            for _ in range(randint(1, ns - 3)):
+            for __ in range(randint(1, ns - 3)):
                 no.append(self.mk_loan(infm - timedelta(days=randint(1, 10))))
 
             ns = len(self.specimens)
-            for _ in range(randint(1, ns - 1)):
+            for __ in range(randint(1, ns - 1)):
                 no.append(self.mk_loan(maxm + timedelta(days=randint(1, 10))))
 
             ns = len(self.specimens)
             if n > 1:
-                for _ in range(ns):
+                for __ in range(ns):
                     yes.append(
                         self.mk_loan(infm + timedelta(randint(1, n - 1)))
                     )
@@ -197,11 +225,11 @@ class NotificationTestCase(TestCase):
             yes.append(self.mk_loan(lim))
 
             ns = len(self.specimens)
-            for _ in range(randint(1, ns - 3)):
+            for __ in range(randint(1, ns - 3)):
                 no.append(self.mk_loan(lim + timedelta(days=randint(1, 10))))
 
             ns = len(self.specimens)
-            for _ in range(ns):
+            for __ in range(ns):
                 yes.append(self.mk_loan(lim - timedelta(days=randint(1, 10))))
 
             self.assertFalse(mail.outbox)
@@ -254,11 +282,11 @@ class NotificationTestCase(TestCase):
             yes.append(self.mk_loan(lim))
 
             ns = len(self.specimens)
-            for _ in range(randint(1, ns - 3)):
+            for __ in range(randint(1, ns - 3)):
                 no.append(self.mk_loan(lim + timedelta(days=randint(1, 10))))
 
             ns = len(self.specimens)
-            for _ in range(ns):
+            for __ in range(ns):
                 yes.append(self.mk_loan(lim - timedelta(days=randint(1, 10))))
 
             self.assertFalse(mail.outbox)
@@ -302,7 +330,269 @@ class NotificationTestCase(TestCase):
             mail.outbox = []
 
     def test_send_notification_loan_receipt(self):
-        loan = self.mk_loan()
-        loan = self.mk_loan()
-        loan = self.mk_loan()
-        self.assertEqual(len(mail.outbox), 3)
+        loan_admin = LoanAdmin(model=Loan, admin_site=AdminSite())
+        n = 3
+
+        for __ in range(n):
+            loan_admin.save_model(
+                obj=self.mk_loan(),
+                request=None,
+                form=Mock(initial={"return_date": None}),
+                change=None,
+            )
+        self.assertEqual(len(mail.outbox), 0)
+
+        Loan.objects.all().update(return_date=timezone.now())
+        self.assertEqual(len(mail.outbox), 0)
+
+        trigger = TriggerChoices.LOAN_RECEIPT
+        Notification.objects.create(
+            name=f"notification_{trigger}",
+            subject=f"subject {trigger}",
+            message=f"<p>message {trigger}</p>",
+            n_parameter=n,
+            trigger=trigger,
+        )
+
+        for __ in range(n):
+            loan_admin.save_model(
+                obj=self.mk_loan(),
+                request=None,
+                form=Mock(initial={"return_date": None}),
+                change=None,
+            )
+        self.assertEqual(len(mail.outbox), n)
+
+        Loan.objects.all().update(date=F("date") - timedelta(days=3))
+        for loan in Loan.objects.all():
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": loan.return_date}),
+                change=True,
+            )
+
+        self.assertEqual(
+            len(mail.outbox),
+            n,
+            msg=_(
+                "Nenhum email deveria ser enviado ao trocar a data do "
+                "empréstimo"
+            ),
+        )
+
+    def test_send_notification_return_receipt(self):
+        loan_admin = LoanAdmin(model=Loan, admin_site=AdminSite())
+        n = 3
+
+        for __ in range(n):
+            loan_admin.save_model(
+                obj=self.mk_loan(), request=None, form=None, change=None
+            )
+        self.assertEqual(len(mail.outbox), 0)
+
+        Loan.objects.all().update(return_date=timezone.now())
+        self.assertEqual(len(mail.outbox), 0)
+
+        Loan.objects.all().delete()
+
+        trigger = TriggerChoices.RETURN_RECEIPT
+        Notification.objects.create(
+            name=f"notification_{trigger}",
+            subject=f"subject {trigger}",
+            message=f"<p>message {trigger}</p>",
+            n_parameter=n,
+            trigger=trigger,
+        )
+
+        for __ in range(n):
+            loan_admin.save_model(
+                obj=self.mk_loan(),
+                request=None,
+                form=Mock(initial={"return_date": None}),
+                change=None,
+            )
+        self.assertEqual(len(mail.outbox), 0)
+
+        for loan in Loan.objects.all():
+            prev_rd = loan.return_date
+            loan.return_date = (
+                loan.return_date - timedelta(days=3)
+                if loan.return_date
+                else timezone.now()
+            )
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": prev_rd}),
+                change=True,
+            )
+        self.assertEqual(len(mail.outbox), n)
+
+        for loan in Loan.objects.all():
+            prev_rd = loan.return_date
+            loan.return_date = (
+                loan.return_date - timedelta(days=3)
+                if loan.return_date
+                else timezone.now()
+            )
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": prev_rd}),
+                change=True,
+            )
+
+        self.assertEqual(
+            len(mail.outbox),
+            n,
+            msg=_(
+                "Nenhum email deveria ser enviado ao trocar a data do "
+                "empréstimo"
+            ),
+        )
+
+        Loan.objects.all().update(
+            return_date=F("return_date") - timedelta(days=3)
+        )
+        for loan in Loan.objects.all():
+            prev_rd = loan.return_date
+            loan.return_date = (
+                loan.return_date - timedelta(days=3)
+                if loan.return_date
+                else timezone.now()
+            )
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": prev_rd}),
+                change=True,
+            )
+
+        self.assertEqual(
+            len(mail.outbox),
+            n,
+            msg=_(
+                "Nenhum email deveria ser enviado ao trocar a data de "
+                "devolução depois de já devolvido"
+            ),
+        )
+
+    def get_request(self):
+        request = self.rf.get(
+            path="",
+            HTTP_REFERER="admin:login",
+        )
+        setattr(request, "session", "session")
+        messages = FallbackStorage(request)
+        setattr(request, "_messages", messages)
+        request.user = self.admin_user
+        return request
+
+    @staticmethod
+    def getmsg(request):
+        return str(next(iter(get_messages(request))))
+
+    def test_send_notification_renewal_receipt(self):
+        loan_admin = LoanAdmin(model=Loan, admin_site=AdminSite())
+        n = 3
+        error_msg = _("Não foi possível renovar")
+
+        for __ in range(n):
+            loan = self.mk_loan()
+            loan_admin.save_model(
+                obj=loan, request=None, form=None, change=None
+            )
+            loan = Loan.objects.get(pk=loan.pk)
+            request = self.get_request()
+            loan_admin.renew_view(request, loan)
+            self.assertNotIn(error_msg, self.getmsg(request))
+
+        self.assertEqual(len(mail.outbox), 0)
+        Loan.objects.all().delete()
+
+        trigger = TriggerChoices.RENEWAL_RECEIPT
+        Notification.objects.create(
+            name=f"notification_{trigger}",
+            subject=f"subject {trigger}",
+            message=f"<p>message {trigger}</p>",
+            n_parameter=n,
+            trigger=trigger,
+        )
+
+        for __ in range(n):
+            loan = self.mk_loan()
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": None}),
+                change=None,
+            )
+            loan = Loan.objects.get(pk=loan.pk)
+            request = self.get_request()
+            loan_admin.renew_view(request, loan)
+            self.assertNotIn(error_msg, self.getmsg(request))
+        self.assertEqual(len(mail.outbox), n)
+
+        for loan in Loan.objects.all():
+            loan = Loan.objects.get(pk=loan.pk)
+            request = self.get_request()
+            loan_admin.renew_view(request, loan)
+            self.assertIn(error_msg, self.getmsg(request))
+            days = sum(loan.renewals.all().values_list("days", flat=True))
+            loan.date = loan.date - timedelta(days=days)
+            loan.save()
+            request = self.get_request()
+            loan_admin.renew_view(request, loan)
+            self.assertNotIn(error_msg, self.getmsg(request))
+        self.assertEqual(len(mail.outbox), 2 * n)
+
+        mail.outbox = []
+        for loan in Loan.objects.all():
+            prev_rd = loan.return_date
+            loan.return_date = (
+                loan.return_date - timedelta(days=3)
+                if loan.return_date
+                else timezone.now()
+            )
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": prev_rd}),
+                change=True,
+            )
+
+        self.assertEqual(
+            len(mail.outbox),
+            0,
+            msg=_(
+                "Nenhum email deveria ser enviado ao trocar a data do "
+                "empréstimo"
+            ),
+        )
+
+        Loan.objects.all().update(
+            return_date=F("return_date") - timedelta(days=3)
+        )
+        for loan in Loan.objects.all():
+            prev_rd = loan.return_date
+            loan.return_date = (
+                loan.return_date - timedelta(days=3)
+                if loan.return_date
+                else timezone.now()
+            )
+            loan_admin.save_model(
+                obj=loan,
+                request=None,
+                form=Mock(initial={"return_date": prev_rd}),
+                change=True,
+            )
+
+        self.assertEqual(
+            len(mail.outbox),
+            0,
+            msg=_(
+                "Nenhum email deveria ser enviado ao trocar a data de "
+                "devolução depois de já devolvido"
+            ),
+        )

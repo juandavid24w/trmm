@@ -3,13 +3,13 @@ from smtplib import SMTPException
 from bs4 import BeautifulSoup
 from django.core.mail import send_mail
 from django.core.mail.backends.smtp import EmailBackend
-from django.template import Context, Template
-from django.utils import timezone
+from django.template import Template
 from django.utils.translation import gettext as _
 
 from loans.models import Loan
 from site_configuration.models import EmailConfiguration
 
+from .context import get_context
 from .models import Notification, NotificationLog
 
 TriggerChoices = Notification.TriggerChoices
@@ -46,18 +46,6 @@ class DynamicSMPTEmailBackend(EmailBackend):
             ssl_certfile=ssl_certfile,
             **kwargs,
         )
-
-
-def get_context(loan, mailconf):
-    return Context(
-        {
-            "book": loan.specimen.book,
-            "name": f"{loan.user.first_name} {loan.user.last_name}",
-            "signature": mailconf.signature,
-            "due": loan.due.strftime("%d/%m/%y"),
-            "late_days": (timezone.now() - loan.due).days,
-        }
-    )
 
 
 def html2text(html):
@@ -142,3 +130,23 @@ def notify_all():
         raise ExceptionGroup(_("Alguns erros foram encontrados"), errors)
 
     return sucesses
+
+
+def receipt(loan, trigger):
+    loan = Loan.objects.get(pk=loan.pk) # Get manager's annotations
+    notifications = Notification.objects.filter(trigger=trigger)
+
+    for notification in notifications:
+        send_notification(loan, notification)
+
+
+def loan_receipt(loan):
+    return receipt(loan, TriggerChoices.LOAN_RECEIPT)
+
+
+def return_receipt(loan):
+    return receipt(loan, TriggerChoices.RETURN_RECEIPT)
+
+
+def renewal_receipt(loan):
+    return receipt(loan, TriggerChoices.RENEWAL_RECEIPT)

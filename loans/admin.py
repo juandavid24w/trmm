@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from admin_buttons.admin import AdminButtonsMixin
 from barcodes.admin import BarcodeSearchBoxMixin
 from default_object.admin import DefaultObjectAdminMixin
+from notifications.mail import loan_receipt, renewal_receipt, return_receipt
 
 from .filters import LoanStatusFilter
 from .models import Loan, Period, Renewal
@@ -223,6 +224,11 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
         else:
             if msg := obj.renew():
                 messages.error(request, message % msg)
+            else:
+                messages.success(
+                    request, _("Renovação realizada com sucesso")
+                )
+                renewal_receipt(obj)
 
         return redirect(request.META["HTTP_REFERER"])
 
@@ -239,6 +245,14 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
                 messages.error(request, message % msg)
 
         return redirect(request.META["HTTP_REFERER"])
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        if not change and not obj.return_date:
+            loan_receipt(obj)
+        elif not form.initial["return_date"] and obj.return_date:
+            return_receipt(obj)
 
     admin_buttons_config = [
         {

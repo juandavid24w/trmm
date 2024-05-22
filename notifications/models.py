@@ -3,11 +3,15 @@ from datetime import timedelta
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from tinymce.models import HTMLField
 
 from loans.models import Loan
+
+from .context import get_context
+
 
 class Notification(models.Model):
     class TriggerChoices(models.IntegerChoices):
@@ -15,6 +19,8 @@ class Notification(models.Model):
         LATE_AFTER_N = 2, _("Atrasado há <n> dias")
         LATE_AFTER_EACH_N = 3, _("Atrasado a cada <n> dias")
         LOAN_RECEIPT = 4, _("Recibo de empréstimo")
+        RETURN_RECEIPT = 5, _("Recibo de devolução")
+        RENEWAL_RECEIPT = 6, _("Recibo de renovação")
 
         def get_queryset(self, querysets, n, log):
             """
@@ -65,14 +71,19 @@ class Notification(models.Model):
     subject = models.CharField(max_length=100, verbose_name=_("Assunto"))
     message = HTMLField(
         verbose_name=_("Mensagem"),
-        help_text=_(
-            "Variáveis disponíveis: {{ name }}, {{ signature }}"
-            + "{{ site_title }}, {{ due }} e {{ book }}"
-            + "{{ late_days }}"
+        help_text=format_html(
+            "{}<code>{}</code>",
+            _("Variáveis disponíveis: "),
+            ", ".join(
+                "{{ %s }}" % k
+                for k in sorted(get_context().flatten().keys())
+                if k not in ("True", "False", "None")
+            ),
         ),
     )
     n_parameter = models.IntegerField(
         verbose_name=_("Parâmetro <n>"),
+        help_text=_("Só é utilizado se o tipo de gatilho contiver '<n>'"),
         blank=True,
         null=True,
         validators=[MinValueValidator],
