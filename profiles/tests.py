@@ -102,13 +102,13 @@ def create_test_groups():
 def create_test_users():
     usergroup, modgroup = create_test_groups()
     user1 = User.objects.create_user(
-        "user1",
+        username="user1",
         password="1234",
         first_name="John",
         last_name="Dickson",
         email="myemail@server.com",
-        profile=Profile(),
     )
+    user1.profile = Profile()
     user1.groups.add(usergroup)
     user1.profile.grade = Profile.Grade.EF6
     user1.profile.save()
@@ -123,13 +123,13 @@ def create_test_users():
     user1.additional_emails.create(email="hmmm@example.com")
 
     user2 = User.objects.create_user(
-        "user2",
+        username="user2",
         password="1234",
         first_name="João",
         last_name="do seu Rique",
         email="youremail@server.com",
-        profile=Profile(),
     )
+    user2.profile = Profile()
     user2.profile.grade = Profile.Grade.EM2
     user2.profile.save()
     user2.groups.add(usergroup)
@@ -142,26 +142,26 @@ def create_test_users():
         receive_notifications=True,
     )
 
-    user3 = User.objects.create_user(
-        "user3",
+    user3 = User.objects.create(
+        username="user3",
         password="abcde",
         first_name="Godofredo",
         last_name="Silvason",
         email="test@server.com",
-        profile=Profile(),
     )
+    user3.profile = Profile()
     user3.groups.add(usergroup)
     user3.groups.add(modgroup)
     user3.profile.save()
 
     user4 = User.objects.create_user(
-        "user4",
+        username="user4",
         password="1234",
         first_name="Pedro",
         last_name="Costa",
         email="test2@example.com",
-        profile=Profile(),
     )
+    user4.profile = Profile()
     user4.profile.grade = Profile.Grade.EM3
     user4.profile.save()
     user4.additional_emails.create(

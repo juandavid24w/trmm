@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext
@@ -8,12 +9,12 @@ from tinymce.models import HTMLField
 
 from loans.models import Loan
 
-
-class Trigger(models.Model):
+class Notification(models.Model):
     class TriggerChoices(models.IntegerChoices):
         DUE_IN_N = 1, _("Expira em <n> dias")
         LATE_AFTER_N = 2, _("Atrasado há <n> dias")
         LATE_AFTER_EACH_N = 3, _("Atrasado a cada <n> dias")
+        LOAN_RECEIPT = 4, _("Recibo de empréstimo")
 
         def get_queryset(self, querysets, n, log):
             """
@@ -21,9 +22,11 @@ class Trigger(models.Model):
             containting loans which are note yet returned and which are
             late, respectively
 
-            n: n parameter from notification
+            n: field n
 
             log: queryset of logs associated with this notification
+
+            returns the queryset of loans to be notified
             """
             match self:
                 case self.DUE_IN_N:
@@ -55,23 +58,9 @@ class Trigger(models.Model):
 
                     return qs
 
-    ttype = models.IntegerField(
-        choices=TriggerChoices,
-        verbose_name=_("tipo de gatilho"),
-    )
+                case _:
+                    return []
 
-    def __str__(self):
-        return self.get_ttype_display()
-
-    class Meta:
-        verbose_name = _("Gatilho")
-        verbose_name_plural = _("Gatilhos")
-        constraints = [
-            models.UniqueConstraint(fields=("ttype",), name="unique ttype"),
-        ]
-
-
-class Notification(models.Model):
     name = models.CharField(max_length=100, verbose_name=_("Nome"))
     subject = models.CharField(max_length=100, verbose_name=_("Assunto"))
     message = HTMLField(
@@ -83,9 +72,15 @@ class Notification(models.Model):
         ),
     )
     n_parameter = models.IntegerField(
-        verbose_name=_("Parâmetro <n>"), blank=True, null=True
+        verbose_name=_("Parâmetro <n>"),
+        blank=True,
+        null=True,
+        validators=[MinValueValidator],
     )
-    triggers = models.ManyToManyField(Trigger)
+    trigger = models.IntegerField(
+        choices=TriggerChoices,
+        verbose_name=_("tipo de gatilho"),
+    )
 
     def __str__(self):
         return self.name

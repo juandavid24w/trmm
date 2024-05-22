@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import Notification, NotificationLog, Trigger
+from .models import Notification, NotificationLog
 
-admin.site.register(Trigger)
-admin.site.register(Notification)
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "trigger", "n_parameter"]
 
 
 @admin.register(NotificationLog)

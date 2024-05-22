@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from django.utils.html import format_html
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from solo.models import SingletonModel
@@ -98,6 +99,14 @@ class EmailConfiguration(SingletonModel):
         blank=True,
         null=True,
         verbose_name=_("Assinatura dos emails"),
+        help_text=format_html(
+            "{}<code>{}</code>{}",
+            _(
+                "Para usar essa assinatura em seus emails, utilize a variável "
+            ),
+            "{{ signature }}",
+            ".",
+        ),
     )
 
     def __str__(self):

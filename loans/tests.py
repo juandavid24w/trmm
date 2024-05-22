@@ -13,6 +13,22 @@ from .models import Loan, Period
 
 User = get_user_model()
 
+def create_test_period():
+    default_period = Period.get_default()
+    default_period.renewals.create(
+        description="renewal 1",
+        days=10,
+        order=1,
+    )
+    default_period.renewals.create(
+        description="renewal 2",
+        days=15,
+        order=2,
+    )
+    default_period.order = 3
+    default_period.save()
+
+    return default_period
 
 class EmptyDBTestCase(TestCase):
     def test_create_default_period(self):
@@ -24,19 +40,7 @@ class LoanAndPeriodTestCase(TestCase):
         create_test_catalog()
         create_test_users()
 
-        self.default_period = Period.get_default()
-        self.default_period.renewals.create(
-            description="renewal 1",
-            days=10,
-            order=1,
-        )
-        self.default_period.renewals.create(
-            description="renewal 2",
-            days=15,
-            order=2,
-        )
-        self.default_period.order = 3
-        self.default_period.save()
+        self.default_period = create_test_period()
 
     def get_specimen_user(self):
         for user in User.objects.all():
