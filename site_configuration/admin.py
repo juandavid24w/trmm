@@ -25,7 +25,10 @@ from .models import (
     SiteConfiguration,
 )
 
-admin.site.register(SiteConfiguration, SingletonModelAdmin)
+@admin.register(SiteConfiguration)
+class SiteConfigurationAdmin(SingletonModelAdmin):
+    class Media:
+        css = {"all": ["site_configuration/style.css"]}
 
 
 class DocumentationChangeList(ChangeList):

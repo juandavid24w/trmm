@@ -1,6 +1,7 @@
 from django.template import Context
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils.timezone import localtime
 
 from site_configuration.models import SiteConfiguration
 
@@ -13,12 +14,12 @@ def get_context(loan=None, mailconf=None):
         "author": loan and loan.specimen.book.author,
         "name": loan and f"{loan.user.first_name} {loan.user.last_name}",
         "signature": mailconf and mailconf.signature,
-        "due": loan and loan.due.strftime(fmt),
+        "due": loan and localtime(loan.due).strftime(fmt),
         "return_date": loan
         and loan.return_date
-        and loan.return_date.strftime(fmt),
+        and localtime(loan.return_date).strftime(fmt),
         "loan_date": loan and loan.date.strftime(fmt),
-        "late_days": loan and (timezone.now() - loan.due).days,
+        "late_days": loan and (timezone.now() - localtime(loan.due)).days,
     }
 
     return Context({k: mark_safe(v) for k, v in values.items()})

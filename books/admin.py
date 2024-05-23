@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
+from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 from isbnlib import canonical, clean, ean13, get_isbnlike
 from unidecode import unidecode
@@ -242,7 +243,7 @@ class BookAdmin(
         description=_("Última modificação"), ordering="last_modified"
     )
     def short_last_modified(self, obj):
-        return obj.last_modified.strftime("%d/%m/%y")
+        return localtime(obj.last_modified).strftime("%d/%m/%y")
 
     @admin.display(description=_("Disponível"), boolean=True)
     def available(self, obj):

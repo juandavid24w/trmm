@@ -3,3 +3,7 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+.clockbox {
+  z-index: 10;
+}

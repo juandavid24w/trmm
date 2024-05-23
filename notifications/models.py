@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.timezone import localtime
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from tinymce.models import HTMLField
@@ -115,7 +116,7 @@ class NotificationLog(models.Model):
     def __str__(self):
         return gettext("Registro: %(user)s | %(created)s") % {
             "user": self.loan.user.profile,
-            "created": self.created.strftime("%d/%m/%y %H:%M"),
+            "created": localtime(self.created).strftime("%d/%m/%y %H:%M"),
         }
 
     class Meta:

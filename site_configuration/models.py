@@ -1,3 +1,5 @@
+from datetime import time
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -7,6 +9,7 @@ from django.dispatch import receiver
 from django.utils.html import format_html
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
+from multiselectfield import MultiSelectField
 from solo.models import SingletonModel
 from tinymce.models import HTMLField
 
@@ -32,6 +35,23 @@ class SiteConfiguration(SiteConfigurationModel):
         null=True,
         blank=True,
     )
+    working_days = MultiSelectField(
+        verbose_name=_("Dias de funcionamento"),
+        choices=(
+            (1, _("Domingo")),
+            (2, _("Segunda-feira")),
+            (3, _("Terça-feira")),
+            (4, _("Quarta-feira")),
+            (5, _("Quinta-feira")),
+            (6, _("Sexta-feira")),
+            (7, _("Sábado")),
+        ),
+        default="2,3,4,5,6",
+    )
+    ending_hour = models.TimeField(
+        verbose_name=_("Horário de fim de funcionamento"),
+        default=time(18, 0),
+    )
     welcome_msg = HTMLField(
         null=True,
         blank=True,
@@ -42,6 +62,12 @@ class SiteConfiguration(SiteConfigurationModel):
         blank=True,
         verbose_name=_("Mensagem de despedida"),
     )
+
+    def get_working_days(self):
+        wd = self.working_days
+        if isinstance(wd, str):
+            wd = wd.split(",")
+        return list(map(int, wd))
 
     def __str__(self):
         return gettext("Configuração do site")

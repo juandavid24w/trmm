@@ -85,18 +85,14 @@ class NotificationTestCase(TestCase):
         call_command("notify", stdout=self.out)
         self.assertIn(_("Ignorando"), self.out.getvalue())
 
-    def mk_loan(self, date=timezone.now(), save=True, renewals=0):
-        assert save or not renewals
-
+    def mk_loan(self, date=timezone.now(), renewals=0):
         loan = Loan(
             specimen=self.specimens.pop(),
             period=self.period,
             user=choice(self.users),
             date=date,
         )
-
-        if save:
-            loan.save()
+        loan.save()
 
         for i in range(renewals):
             loan.renewals.create(
@@ -106,6 +102,7 @@ class NotificationTestCase(TestCase):
                 order=i + 1,
             )
 
+        loan = Loan.objects.get(pk=loan.pk)
         return loan
 
     def test_send_notification(self):
@@ -149,31 +146,43 @@ class NotificationTestCase(TestCase):
             )
             period = self.period
 
-            no = []
-            yes = []
+            loans = []
 
             infm = timezone.now() - timedelta(days=period.days)
             maxm = timezone.now() + timedelta(days=n - period.days)
 
-            no.append(self.mk_loan(infm))
-            no.append(self.mk_loan(maxm + timedelta(seconds=5)))
-            yes.append(self.mk_loan(infm + timedelta(seconds=5)))
-            yes.append(self.mk_loan(maxm))
+            loans.append(self.mk_loan(infm))
+            loans.append(self.mk_loan(infm + timedelta(seconds=5)))
+            loans.append(self.mk_loan(maxm))
+            loans.append(self.mk_loan(maxm + timedelta(seconds=5)))
 
             ns = len(self.specimens)
             for __ in range(randint(1, ns - 3)):
-                no.append(self.mk_loan(infm - timedelta(days=randint(1, 10))))
+                loans.append(
+                    self.mk_loan(infm - timedelta(days=randint(1, 10)))
+                )
 
             ns = len(self.specimens)
             for __ in range(randint(1, ns - 1)):
-                no.append(self.mk_loan(maxm + timedelta(days=randint(1, 10))))
+                loans.append(
+                    self.mk_loan(maxm + timedelta(days=randint(1, 10)))
+                )
 
             ns = len(self.specimens)
             if n > 1:
                 for __ in range(ns):
-                    yes.append(
+                    loans.append(
                         self.mk_loan(infm + timedelta(randint(1, n - 1)))
                     )
+
+            no = []
+            yes = []
+
+            for l in loans:
+                if not l.late and timezone.now() + timedelta(days=n) > l.due:
+                    yes.append(l)
+                else:
+                    no.append(l)
 
             self.assertFalse(mail.outbox)
             call_command("notify", stdout=self.out)
@@ -215,22 +224,33 @@ class NotificationTestCase(TestCase):
                 trigger=trigger,
             )
             period = self.period
+            loans = []
+
+            lim = timezone.now() + timedelta(days=-period.days - n)
+
+            loans.append(self.mk_loan(lim + timedelta(seconds=5)))
+            loans.append(self.mk_loan(lim))
+
+            ns = len(self.specimens)
+            for __ in range(randint(1, ns - 3)):
+                loans.append(
+                    self.mk_loan(lim + timedelta(days=randint(1, 10)))
+                )
+
+            ns = len(self.specimens)
+            for __ in range(ns):
+                loans.append(
+                    self.mk_loan(lim - timedelta(days=randint(1, 10)))
+                )
 
             no = []
             yes = []
 
-            lim = timezone.now() + timedelta(days=-period.days - n)
-
-            no.append(self.mk_loan(lim + timedelta(seconds=5)))
-            yes.append(self.mk_loan(lim))
-
-            ns = len(self.specimens)
-            for __ in range(randint(1, ns - 3)):
-                no.append(self.mk_loan(lim + timedelta(days=randint(1, 10))))
-
-            ns = len(self.specimens)
-            for __ in range(ns):
-                yes.append(self.mk_loan(lim - timedelta(days=randint(1, 10))))
+            for l in loans:
+                if l.late and timezone.now() - timedelta(days=n) > l.due:
+                    yes.append(l)
+                else:
+                    no.append(l)
 
             self.assertFalse(mail.outbox)
             call_command("notify", stdout=self.out)
@@ -273,21 +293,33 @@ class NotificationTestCase(TestCase):
             )
             period = self.period
 
+            loans = []
+
             no = []
             yes = []
 
             lim = timezone.now() + timedelta(days=-period.days - n)
 
-            no.append(self.mk_loan(lim + timedelta(seconds=5)))
-            yes.append(self.mk_loan(lim))
+            loans.append(self.mk_loan(lim + timedelta(seconds=5)))
+            loans.append(self.mk_loan(lim))
 
             ns = len(self.specimens)
             for __ in range(randint(1, ns - 3)):
-                no.append(self.mk_loan(lim + timedelta(days=randint(1, 10))))
+                loans.append(
+                    self.mk_loan(lim + timedelta(days=randint(1, 10)))
+                )
 
             ns = len(self.specimens)
             for __ in range(ns):
-                yes.append(self.mk_loan(lim - timedelta(days=randint(1, 10))))
+                loans.append(
+                    self.mk_loan(lim - timedelta(days=randint(1, 10)))
+                )
+
+            for l in loans:
+                if timezone.now() - timedelta(days=n) > l.due:
+                    yes.append(l)
+                else:
+                    no.append(l)
 
             self.assertFalse(mail.outbox)
             call_command("notify", stdout=self.out)

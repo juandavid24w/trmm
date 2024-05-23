@@ -1,13 +1,16 @@
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from random import choice
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
+from django.utils import timezone
+from django.utils.timezone import localtime
 
 from books.models import Book, Classification, Collection, Location, Specimen
 from books.tests.test_catalog import create_test_catalog
 from profiles.tests import create_test_users
+from site_configuration.models import SiteConfiguration
 
 from .models import Loan, Period
 
@@ -175,3 +178,63 @@ class LoanAndPeriodTestCase(TestCase):
         self.assertEqual(loan.period, period)
         self.assertIsNotNone(loan.renew())
         loan.delete()
+
+
+class LoanDueTestCase(TestCase):
+    def setUp(self):
+        create_test_catalog()
+        create_test_users()
+
+        self.specimens = list(Specimen.objects.all())
+        self.users = list(User.objects.all())
+        self.conf = SiteConfiguration().get_solo()
+        self.period = create_test_period()
+
+    def mk_loan(self, date=timezone.now(), renewals=0):
+        loan = Loan(
+            specimen=self.specimens.pop(),
+            period=self.period,
+            user=choice(self.users),
+            date=date,
+        )
+        loan.save()
+
+        for i in range(renewals):
+            loan.renewals.create(
+                description="ren.",
+                days=15,
+                period=self.period,
+                order=i + 1,
+            )
+
+        loan = Loan.objects.get(pk=loan.pk)
+        return loan
+
+    def test_loan_due(self):
+        for day in range(7):
+            for hour in range(7):
+                loan = self.mk_loan(
+                    date=timezone.make_aware(
+                        datetime.combine(
+                            timezone.now().date(), time(2 + 3 * hour)
+                        )
+                        + timedelta(days=day)
+                    )
+                )
+                loan = Loan.objects.get(pk=loan.pk)
+                self.assertIn(
+                    (localtime(loan.due).isoweekday() - 1) % 7 + 2,
+                    self.conf.get_working_days(),
+                    msg="Loans should be due to working days only",
+                )
+                self.assertEqual(
+                    localtime(loan.due).time(),
+                    self.conf.ending_hour,
+                    msg="All loans should be due when the library closes",
+                )
+                self.assertGreaterEqual(
+                    loan.due, loan.exact_due, msg="Due must be >= exact due"
+                )
+            self.specimens = list(Specimen.objects.all())
+            self.users = list(User.objects.all())
+            Loan.objects.all().delete()

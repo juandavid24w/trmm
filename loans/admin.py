@@ -9,6 +9,7 @@ from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 
 from admin_buttons.admin import AdminButtonsMixin
@@ -112,7 +113,7 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
     @admin.display(description=_("Vencimento"))
     def due(self, obj):
-        return obj.due.strftime("%d/%m/%Y, %H:%M")
+        return localtime(obj.due).strftime("%d/%m/%Y, %H:%M")
 
     @admin.display(description=_("Título"), ordering="specimen__book__title")
     def title(self, obj):
@@ -130,16 +131,16 @@ class LoanAdmin(AdminButtonsMixin, BarcodeSearchBoxMixin, admin.ModelAdmin):
 
     @admin.display(description=_("Empréstimo"), ordering="date")
     def short_date(self, obj):
-        return obj.date.strftime("%d/%m/%y")
+        return localtime(obj.date).strftime("%d/%m/%y")
 
     @admin.display(description=_("Vencimento"), ordering="due")
     def short_due(self, obj):
-        return obj.due.strftime("%d/%m/%y")
+        return localtime(obj.due).strftime("%d/%m/%y")
 
     @admin.display(description=_("Devolução"), ordering="return_date")
     def short_return_date(self, obj):
         if obj.return_date:
-            return obj.return_date.strftime("%d/%m/%y")
+            return localtime(obj.return_date).strftime("%d/%m/%y")
         return obj.return_date
 
     @admin.display(

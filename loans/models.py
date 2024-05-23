@@ -6,13 +6,15 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Count, DurationField, F, Q, Sum
-from django.db.models.functions import Cast
+from django.db.models import Case, Count, DurationField, F, Q, Sum, When
+from django.db.models.functions import Cast, ExtractWeekDay
+from django.db.models.lookups import In
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from books.models import Book, Classification, Collection, Location, Specimen
 from default_object.models import DefaultObjectMixin
+from site_configuration.models import SiteConfiguration
 
 User = get_user_model()
 
@@ -183,15 +185,53 @@ class LoanManager(models.Manager):  # pylint: disable=too-few-public-methods
     """Annotate due date (`due`), number of renovations
     (`renewals__count`) and late bool (`late`) to resulting querysets
     """
-
     def get_queryset(self, *args, **kwargs):
         qs = super().get_queryset(*args, **kwargs)
+
+        conf = SiteConfiguration.get_solo()
+        working_days = conf.get_working_days()
+
         renewals = Sum("renewals__days", default=0)
         duration = Cast(
             timedelta(days=1) * (renewals + F("period__days")),
             output_field=DurationField(),
         )
-        qs = qs.annotate(due=F("date") + duration)
+        qs = qs.annotate(exact_due=F("date") + duration)
+
+        diff = Cast(
+            (conf.ending_hour - F("exact_due__time")),
+            output_field=DurationField(),
+        )
+
+        is_before = Q(exact_due__time__lt=conf.ending_hour)
+        is_after = Q(exact_due__time__gte=conf.ending_hour)
+
+        def is_in(i):
+            return In(
+                ExtractWeekDay(F("exact_due") + timedelta(days=i)),
+                working_days,
+            )
+
+        due = Case(
+            *(
+                When(
+                    (is_before & is_in(i)),
+                    then=F("exact_due") + diff + timedelta(days=i),
+                )
+                for i in range(0, 7)
+            ),
+            *(
+                When(
+                    (is_after & is_in(i)),
+                    then=F("exact_due") + diff + timedelta(days=i),
+                )
+                for i in range(1, 8)
+            ),
+            default="exact_due",
+            output_field=models.DateTimeField(),
+        )
+
+        qs = qs.annotate(due=due)
         qs = qs.annotate(Count("renewals"))
         qs = qs.annotate(returned=Q(return_date__isnull=False))
         qs = qs.annotate(late=Q(returned=False) & Q(due__lt=timezone.now()))

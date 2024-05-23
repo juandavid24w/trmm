@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "default_object",
     "alter_field_action",
     "hidden_admin",
+    "multiselectfield",
 ] + (
     [
         "django_extensions",
