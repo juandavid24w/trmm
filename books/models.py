@@ -158,6 +158,10 @@ class Book(models.Model):
     def units(self):
         return self.specimens.count()
 
+    @property
+    def pending_labeling(self):
+        return self.specimens.filter(label_printed=False).exists()
+
     def calc_title_first_letters(self, n=1):
         words = self.title.split()
         while words[0].lower() in ARTICLES:
@@ -206,6 +210,7 @@ class Book(models.Model):
     def available(self):
         return self.specimens.filter(_available=True).exists()
 
+
     def __str__(self):
         return f"{self.title}"
 
@@ -246,6 +251,10 @@ class Specimen(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Livro"),
         related_name="specimens",
+    )
+    label_printed = models.BooleanField(
+        default=False,
+        verbose_name=_("Etiqueta impressa?"),
     )
 
     @property

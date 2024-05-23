@@ -24,6 +24,8 @@ class PageConfiguration:
     use_border: bool
     include_title: bool
     barcode_option: int
+    include_marked: bool
+    mark_labeled: bool
 
     box_w: float = None
     box_h: float = None
@@ -135,6 +137,9 @@ class LabelPDF(FPDF):
                 return ret
 
     def entry(self, specimen):
+        if not self.conf.include_marked and specimen.label_printed:
+            return
+
         color = specimen.book.classification.location.color
         barcode_prop = 2 / 3
 
@@ -201,6 +206,10 @@ class LabelPDF(FPDF):
             self.set_font("Helvetica", "", self.conf.font_size)
 
         self.set_xy(next_x, next_y)
+
+        if self.conf.mark_labeled:
+            specimen.label_printed = True
+            specimen.save()
 
 
 def create(obj):

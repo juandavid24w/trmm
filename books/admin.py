@@ -25,6 +25,7 @@ from profiles.admin import HiddenAdminMixin
 from public_admin.admin import PublicModelAdminMixin
 
 from . import isbn
+from .actions import mark_label_printed, remove_label_printed
 from .models import Book, Classification, Collection, Location, Specimen
 from .widgets import ISBNSearchInput
 
@@ -123,7 +124,7 @@ class SpecimenAdmin(
 
 class SpecimenInline(admin.TabularInline):
     model = Specimen
-    fields = ["number", "loan", "available"]
+    fields = ["number", "loan", "available", "label_printed"]
     readonly_fields = ["number", "loan", "available"]
     extra = 0
 
@@ -222,6 +223,8 @@ class BookAdmin(
         "make_labels",
         alter_field_action(Book, "classification"),
         alter_field_action(Book, "collection"),
+        mark_label_printed,
+        remove_label_printed,
     ]
     specimen_id_field = "specimens__id"
 
@@ -234,6 +237,12 @@ class BookAdmin(
     @admin.display(description=_("Exemplares"), ordering="specimens__count")
     def units(self, obj):
         return obj.units()
+
+    @admin.display(
+        description=_("Impressão de etiquetas pendente"),
+    )
+    def pending_labeling(self, obj):
+        return obj.pending_labeling
 
     @admin.display(description=_("Autoria"), ordering="author")
     def author(self, obj):

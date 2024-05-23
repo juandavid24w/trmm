@@ -22,3 +22,4 @@ pylint-django==2.5.5
 pylint-plugin-utils==0.8.2
 toml==0.10.2
 tomlkit==0.12.4
+django-dynamic-fixture==4.0.1

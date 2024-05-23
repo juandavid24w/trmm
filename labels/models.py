@@ -141,6 +141,16 @@ class LabelPrint(models.Model):
         choices=BarcodeChoices,
         default=BarcodeChoices.NO_BARCODE,
     )
+    include_marked = models.BooleanField(
+        verbose_name=_(
+            "Incluir exemplares com marcação de etiqueta impressa"
+        ),
+        default=False,
+    )
+    mark_labeled = models.BooleanField(
+        verbose_name=_("Fazer marcação de etiqueta impressa nos exemplares"),
+        default=True,
+    )
 
     def save(self, *args, **kwargs):
         if self.id and self.specimens.count():
