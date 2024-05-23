@@ -3,7 +3,6 @@ from dataclasses import dataclass, fields
 from django.utils.translation import gettext as _
 from fpdf import FPDF
 from fpdf.fpdf import PAGE_FORMATS
-from isbnlib import mask
 from PIL import ImageColor
 
 from .barcodes import get_barcode_image
@@ -23,8 +22,8 @@ class PageConfiguration:
     font_size: float
     use_color: bool
     use_border: bool
-    include_barcode: bool
-    use_isbn: bool
+    include_title: bool
+    barcode_option: int
 
     box_w: float = None
     box_h: float = None
@@ -88,6 +87,7 @@ class LabelPDF(FPDF):
         )
         self.set_auto_page_break(0)
         self.n_labels = 0
+        self.obj = obj
 
     def walk(self, x, y):
         self.set_xy(self.get_x() + x, self.get_y() + y)
@@ -123,9 +123,19 @@ class LabelPDF(FPDF):
 
         return x, y
 
+    def fix_title(self, title):
+        if not self.conf.include_title:
+            return ""
+
+        width = self.conf.box_w
+        padding = 3
+        for end in range(len(title), 0, -1):
+            ret = title[:end]
+            if self.get_string_width(ret) < width - padding:
+                return ret
+
     def entry(self, specimen):
         color = specimen.book.classification.location.color
-        barcode = specimen.book.canonical_isbn and self.conf.include_barcode
         barcode_prop = 2 / 3
 
         if color and self.conf.use_color:
@@ -135,7 +145,10 @@ class LabelPDF(FPDF):
         next_x, next_y = self.get_x(), self.get_y()
         self.set_xy(label_x, label_y)
 
+        title = self.fix_title(specimen.book.title)
+
         words = [
+            *((title,) if title else ()),
             specimen.book.code,
             specimen.book.classification.abbreviation,
             specimen.book.classification.location.name,
@@ -143,9 +156,13 @@ class LabelPDF(FPDF):
             _("Ex. %(n)s") % {"n": specimen.number},
         ]
 
+        use_bc, bc_number, bc_text = self.obj.resolve_barcode(
+            self.conf, specimen
+        )
+
         for word in words:
             self.cell(
-                w=self.conf.box_w * (1 - barcode_prop if barcode else 1),
+                w=self.conf.box_w * (1 - barcode_prop if use_bc else 1),
                 h=self.conf.box_h / len(words),
                 new_x="left",
                 new_y="next",
@@ -153,21 +170,20 @@ class LabelPDF(FPDF):
                 border="B" if self.conf.use_color else 0,
             )
 
-        if barcode:
+        if use_bc:
+            ystart = 0.5 + self.conf.box_h * (1 / 5)
             self.set_xy(
                 label_x + self.conf.box_w * (1 - barcode_prop) + 0.5,
-                label_y + 0.5,
+                label_y + ystart,
             )
             width = self.conf.box_w * barcode_prop - 1
-            height = self.conf.box_h * (4 / 5) - 1
-            number = (
-                specimen.book.canonical_isbn
-                if self.conf.use_isbn
-                else specimen.id
-            )
+            if title:
+                height = self.conf.box_h * (3 / 5) - 1
+            else:
+                height = self.conf.box_h * (4 / 5) - 1
             self.image(
                 get_barcode_image(
-                    number=number,
+                    number=bc_number,
                     width=width,
                     height=height,
                 ),
@@ -177,10 +193,10 @@ class LabelPDF(FPDF):
             )
             self.set_font("Helvetica", "", self.conf.font_size * 0.85)
             self.cell(
-                text=mask(number) if self.conf.use_isbn else str(number),
+                text=bc_text,
                 align="C",
                 w=width,
-                h=self.conf.box_h - height - 2,
+                h=self.conf.box_h - ystart - height - 2,
             )
             self.set_font("Helvetica", "", self.conf.font_size)
 

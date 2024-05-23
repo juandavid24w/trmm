@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from fpdf.fpdf import PAGE_FORMATS
+from isbnlib import mask
 
 from books.models import Specimen
 from default_object.models import DefaultObjectMixin
@@ -92,6 +93,18 @@ class LabelPageConfiguration(DefaultObjectMixin, models.Model):
 
 
 class LabelPrint(models.Model):
+    class BarcodeChoices(models.IntegerChoices):
+        NO_BARCODE = 1, _("Não incluir código de barras")
+        USE_ISBN = 2, _(
+            "Incluir código de barras do ISBN (se não houver, usa o "
+            "identificador)"
+        )
+        USE_ID = 3, _("Incluir código de barras do identificador")
+        ONLY_NO_ISBN = 4, _(
+            "Só incluir código de barras se o exemplar não tiver ISBN"
+        )
+        ONLY_WITH_ISBN = 5, _("Só incluir código de barras do ISBN")
+
     name = models.CharField(
         max_length=127,
         verbose_name=_("Nome"),
@@ -114,21 +127,19 @@ class LabelPrint(models.Model):
     labels_file = models.FileField(
         verbose_name=_("Arquivo com as etiquetas"),
         upload_to="labels",
+        help_text=_("Salve para gerar esse arquivo novamente"),
     )
     use_color = models.BooleanField(verbose_name=_("Usar cor"), default=False)
     use_border = models.BooleanField(
         verbose_name=_("Usar borda"), default=False
     )
-    include_barcode = models.BooleanField(
-        verbose_name=_("Incluir código de barras"), default=False
+    include_title = models.BooleanField(
+        verbose_name=_("incluir título"), default=False
     )
-    use_isbn = models.BooleanField(
-        default=False,
-        verbose_name=_("Usar ISBN no código de barras"),
-        help_text=_(
-            "Caso contrário, usa o identificador único do exemplar. "
-            "Só válido se o campo acima estiver ativado."
-        ),
+    barcode_option = models.IntegerField(
+        verbose_name=_("Opções de código de barra"),
+        choices=BarcodeChoices,
+        default=BarcodeChoices.NO_BARCODE,
     )
 
     def save(self, *args, **kwargs):
@@ -144,6 +155,35 @@ class LabelPrint(models.Model):
                 )
 
         super().save(*args, **kwargs)
+
+    def resolve_barcode(self, conf, specimen):
+        no = (False, None, None)
+        isbn = (
+            True,
+            specimen.book.canonical_isbn,
+            mask(specimen.book.canonical_isbn),
+        )
+        id_ = (True, specimen.id, str(specimen.id))
+
+        match conf.barcode_option:
+            case self.BarcodeChoices.NO_BARCODE:
+                return False, None, None
+            case self.BarcodeChoices.USE_ID:
+                return id_
+            case self.BarcodeChoices.USE_ISBN:
+                if specimen.book.canonical_isbn:
+                    return isbn
+                return id_
+            case self.BarcodeChoices.ONLY_NO_ISBN:
+                if specimen.book.canonical_isbn:
+                    return no
+                return id_
+            case self.BarcodeChoices.ONLY_WITH_ISBN:
+                if specimen.book.canonical_isbn:
+                    return isbn
+                return no
+            case _:
+                raise ValueError("Expected BarcodeChoice value")
 
     def __str__(self):
         return self.name
