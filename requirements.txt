@@ -27,3 +27,5 @@ python-barcode==0.15.1
 djangorestframework==3.15.1
 djangorestframework-csv==3.0.2
 django-multiselectfield @ git+https://github.com/goinnn/django-multiselectfield@395d0b26d6b2a65d7fd21a505450fbb6b2ca8a03
+huey==2.5.0
+redis==5.0.4

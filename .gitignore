@@ -4,6 +4,7 @@ venv/
 *.pyc
 __pycache__
 db.sqlite3
+huey.db
 media
 /static
 *.bak
@@ -15,3 +16,4 @@ cert.key
 /dev/makefile.variables
 /data
 /todo
+/deploy/huey.service

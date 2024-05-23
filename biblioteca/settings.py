@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "alter_field_action",
     "hidden_admin",
     "multiselectfield",
+    "huey.contrib.djhuey",
 ] + (
     [
         "django_extensions",
@@ -218,3 +219,8 @@ REST_FRAMEWORK = {
 }
 
 CSVIO_DEFAULT_MODEL = "books.book"
+
+HUEY = {
+    "huey_class": "huey.SqliteHuey" if DEBUG else "huey.RedisHuey",
+    "consumer": {"workers": 2},
+}

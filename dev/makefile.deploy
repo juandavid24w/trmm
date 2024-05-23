@@ -23,4 +23,19 @@ backup_condition=git diff HEAD HEAD~1 --name-only | grep -q migrations
 deploy_backup:
 	$(serverdo) 'cd $(folder); if $(backup_condition); then $(manage) backup; fi'
 
-deploy: deploy_pull deploy_pip deploy_migrate deploy_static deploy_restart deploy_backup
+
+deploy_huey:
+	@[ -f "$(huey_service)" ] || { \
+		echo "Não encontrei deploy/huey.service. Abortando..." && false ; \
+	}
+	scp $(huey_service) $(host):/etc/systemd/system/huey.service
+
+deploy_restart_huey:
+	$(serverdo) 'systemctl enable huey'
+	$(serverdo) 'systemctl restart huey'
+
+huey_service=deploy/huey.service
+deploy_configuration: deploy_huey deploy_restart_huey
+
+deploy: deploy_pull deploy_pip deploy_migrate deploy_static \
+	deploy_restart deploy_backup deploy_restart_huey

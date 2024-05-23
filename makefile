@@ -44,7 +44,7 @@ compare_reqs:
 
 compare_reqs_comm:
 	@cat dev/*requirements.txt *requirements.txt | sort > ${tmp1}
-	@$(venv) pip freeze | sort > ${tmp2}
+	@$(venv); pip freeze | sort > ${tmp2}
 	@comm -13 ${tmp1} ${tmp2}
 
 -include dev/makefile.deploy

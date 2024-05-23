@@ -1,0 +1,13 @@
+[Unit]
+Description=My Huey
+After=network.target
+
+[Service]
+User=someuser
+Group=somegroup
+WorkingDirectory=/path/to/project/
+ExecStart=/bin/bash -c '. .venv/bin/activate && ./manage.py run_huey'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

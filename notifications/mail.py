@@ -5,6 +5,8 @@ from django.core.mail import send_mail
 from django.core.mail.backends.smtp import EmailBackend
 from django.template import Template
 from django.utils.translation import gettext as _
+from huey import crontab
+from huey.contrib.djhuey import periodic_task, task
 
 from loans.models import Loan
 from site_configuration.models import EmailConfiguration
@@ -61,6 +63,7 @@ def get_recipient_list(user):
     ]
 
 
+@task()
 def send_notification(loan, notification):
     mailconf = EmailConfiguration.get_solo()
     context = get_context(loan, mailconf)
@@ -109,6 +112,7 @@ def notify(querysets, notification, trigger):
     return count
 
 
+@periodic_task(crontab(minute=0, hour="7-19/3"))
 def notify_all():
     mailconf = EmailConfiguration.get_solo()
 
