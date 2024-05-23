@@ -14,6 +14,7 @@ class NotificationLogAdmin(admin.ModelAdmin):
     list_display = ["user", "book", "notification", "created"]
     fields = ["user", "book", "notification", "loan", "created"]
     readonly_fields = fields
+    ordering = ["-created"]
 
     def has_change_permission(self, *args, **kwargs):
         return False
