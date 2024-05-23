@@ -2,10 +2,11 @@ from django.contrib.auth import get_user_model
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser
 
-from books.models import Book, Classification, Location
+from books.models import Book, Classification, Collection, Location
 from books.serializers import (
     BookHyperlinkedSerializer,
     ClassificationHyperlinkedSerializer,
+    CollectionHyperlinkedSerializer,
     LocationHyperlinkedSerializer,
 )
 from profiles.serializers import UserSerializer
@@ -28,6 +29,12 @@ class ClassificationViewSet(viewsets.ReadOnlyModelViewSet):
 class LocationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationHyperlinkedSerializer
+    permission_classes = [AllowAny]
+
+
+class CollectionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Collection.objects.all()
+    serializer_class = CollectionHyperlinkedSerializer
     permission_classes = [AllowAny]
 
 

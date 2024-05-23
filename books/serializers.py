@@ -4,8 +4,13 @@ from rest_framework import serializers
 import csvio
 
 from .isbn import search
-from .models import Book, Classification, Location
+from .models import Book, Classification, Collection, Location
 
+
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = ["name", "is_default"]
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -32,8 +37,25 @@ class BookSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["units"] = instance.units()
+        data["collection"] = Collection.objects.get(pk=data["collection"])
 
         return data
+
+    def to_internal_value(self, data):
+        if isinstance(data["collection"], str):
+            name = data["collection"]
+            try:
+                data["collection"] = Collection.objects.get(name=name).pk
+            except Collection.DoesNotExist as e:
+                raise serializers.ValidationError(
+                    {
+                        "collection": [
+                            _("Acervo inválido: %(name)s") % {"name": name}
+                        ]
+                    }
+                ) from e
+
+        return super().to_internal_value(data)
 
     def create(self, validated_data):
         units = validated_data.pop("units", 0)
@@ -56,6 +78,7 @@ class BookSerializer(serializers.ModelSerializer):
             "author",
             "publisher",
             "classification",
+            "collection",
             "location",
             "code",
             "creation_date",
@@ -97,6 +120,12 @@ class HyperlinkedMixin(serializers.HyperlinkedModelSerializer):
         return ["url", *super().get_field_names(*args, **kwargs)]
 
 
+class CollectionHyperlinkedSerializer(
+    CollectionSerializer,
+    HyperlinkedMixin,
+):
+    pass
+
 class LocationHyperlinkedSerializer(
     LocationSerializer,
     HyperlinkedMixin,
@@ -130,5 +159,6 @@ csvio.register(
     label=_("Livros (com busca por ISBN)"),
     use_with="import",
 )
+csvio.register(Collection, CollectionSerializer)
 csvio.register(Location, LocationSerializer)
 csvio.register(Classification, ClassificationSerializer)

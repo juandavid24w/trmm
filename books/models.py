@@ -66,6 +66,11 @@ class Collection(DefaultObjectMixin, models.Model):
         verbose_name = _("Acervo")
         verbose_name_plural = _("Acervos")
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("name",), name="unique_collection_name"
+            )
+        ]
 
 
 class Classification(models.Model):
