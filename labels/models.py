@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
@@ -15,8 +14,6 @@ from isbnlib import mask
 
 from books.models import Specimen
 from default_object.models import DefaultObjectMixin
-
-from .labels import create, create_file
 
 
 @dataclass
@@ -124,11 +121,6 @@ class LabelPrint(models.Model):
     created = models.DateTimeField(
         auto_now_add="True", verbose_name=_("Data de criação")
     )
-    labels_file = models.FileField(
-        verbose_name=_("Arquivo com as etiquetas"),
-        upload_to="labels",
-        help_text=_("Salve para gerar esse arquivo novamente"),
-    )
     use_color = models.BooleanField(verbose_name=_("Usar cor"), default=False)
     use_border = models.BooleanField(
         verbose_name=_("Usar borda"), default=False
@@ -151,20 +143,17 @@ class LabelPrint(models.Model):
         verbose_name=_("Fazer marcação de etiqueta impressa nos exemplares"),
         default=True,
     )
-
-    def save(self, *args, **kwargs):
-        if self.id and self.specimens.count():
-            if self.labels_file.name:
-                create_file(self, self.labels_file.path)
-            else:
-                self.labels_file.save(
-                    # Translators: Labels download filename
-                    name=gettext("etiquetas") + ".pdf",
-                    content=ContentFile(create(self)),
-                    save=False,
-                )
-
-        super().save(*args, **kwargs)
+    status = models.CharField(
+        verbose_name=_("Status do processamento"),
+        max_length=512,
+        default="",
+        blank=True,
+        editable=False,
+    )
+    labels_file = models.FileField(
+        verbose_name=_("Arquivo com as etiquetas"),
+        upload_to="labels",
+    )
 
     def resolve_barcode(self, conf, specimen):
         no = (False, None, None)
@@ -194,6 +183,14 @@ class LabelPrint(models.Model):
                 return no
             case _:
                 raise ValueError("Expected BarcodeChoice value")
+
+    def n_labels(self):
+        return self.specimens.count()
+
+    def save(self, *args, **kwargs):
+        if not self.status:
+            self.status = gettext("Processamento não iniciado.")
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

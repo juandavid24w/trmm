@@ -1,0 +1,7 @@
+{% extends 'admin/change_form.html' %}
+{% load i18n %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ save_button_label|json_script:"save-button-label"}}
+{% endblock %}

@@ -138,7 +138,7 @@ class LabelPDF(FPDF):
 
     def entry(self, specimen):
         if not self.conf.include_marked and specimen.label_printed:
-            return
+            return 0
 
         color = specimen.book.classification.location.color
         barcode_prop = 2 / 3
@@ -211,19 +211,14 @@ class LabelPDF(FPDF):
             specimen.label_printed = True
             specimen.save()
 
+        return 1
+
 
 def create(obj):
     pdf = LabelPDF(obj, obj.configuration)
+    count = 0
 
     for specimen in obj.specimens.all():
-        pdf.entry(specimen)
+        count += pdf.entry(specimen)
 
-    return pdf.output()
-
-
-def create_file(obj, filename):
-    content = create(obj)
-
-    if content:
-        with open(filename, "wb") as f:
-            f.write(content)
+    return pdf.output(), count

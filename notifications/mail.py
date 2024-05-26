@@ -112,7 +112,6 @@ def notify(querysets, notification, trigger):
     return count
 
 
-@periodic_task(crontab(minute=0, hour="7-19/3"))
 def notify_all():
     mailconf = EmailConfiguration.get_solo()
 
@@ -141,6 +140,10 @@ def notify_all():
 
     return sucesses
 
+
+@periodic_task(crontab(minute=0, hour="7-19/3"))
+def periodic_notify_all():
+    notify_all()
 
 def receipt(loan, trigger):
     loan = Loan.objects.get(pk=loan.pk) # Get manager's annotations
