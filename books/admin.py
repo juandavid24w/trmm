@@ -8,6 +8,7 @@ from django.db import models
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.functional import lazy
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
@@ -40,6 +41,26 @@ def custom_title_filter_factory(title):
 
     return Wrapper
 
+
+class ShowBookFilterMixin:
+    def get_readonly_fields(self, request, obj=None):
+        fields = super().get_readonly_fields(request, obj)
+
+        fields = [*fields, "show_book_filter"]
+        return fields
+
+    @admin.display(description=_("Livros"))
+    def show_book_filter(self, obj):
+        model = obj._meta.verbose_name
+        key, field = getattr(self, "book_filter_data")
+        url = reverse("admin:books_book_changelist")
+        url += f"?{key}={urllib.parse.quote_plus(getattr(obj, field))}"
+
+        return format_html(
+            '<a href="{}">{}</a>',
+            url,
+            _("Mostrar livros dessa %(model)s") % {"model": model},
+        )
 
 class UnaccentSearchMixin:
     def get_search_results(self, request, queryset, search_term):
@@ -378,23 +399,28 @@ class BookAdmin(
         return actions
 
 
-class ClassificationAdmin(admin.ModelAdmin):
+class ClassificationAdmin(ShowBookFilterMixin, admin.ModelAdmin):
     list_display = ("__str__", "abbreviation", "location", "location_color")
+    book_filter_data = ("classification__abbreviation", "abbreviation")
 
     @admin.display(description=_("Cor da localização"))
     def location_color(self, obj):
         return obj.location.color_icon()
 
-class LocationAdmin(admin.ModelAdmin):
+
+class LocationAdmin(ShowBookFilterMixin, admin.ModelAdmin):
     list_display = ["__str__", "color_icon"]
+    book_filter_data = ("classification__location__name", "name")
 
     @admin.display(description=_("Cor"))
     def color_icon(self, obj):
         return obj.color_icon()
 
 
-class CollectionAdmin(DefaultObjectAdminMixin, admin.ModelAdmin):
-    pass
+class CollectionAdmin(
+    ShowBookFilterMixin, DefaultObjectAdminMixin, admin.ModelAdmin
+):
+    book_filter_data = ("collection__name", "name")
 
 
 class PublicBookAdmin(PublicModelAdminMixin, BookAdmin):
