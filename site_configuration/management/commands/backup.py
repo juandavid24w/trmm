@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils.translation import gettext as _
 
-from ...admin import BackupAdmin
+from ...admin import BackupAdmin, background_dump
 from ...models import Backup
 
 
@@ -12,12 +12,7 @@ class Command(BaseCommand):
         name = BackupAdmin.get_available_name(
             _("%(date)s_backup_automatico%(n)s")
         )
-        backup = Backup(
-            name=name,
-            do_db_dump=True,
-            do_media_dump=True,
-        )
-        backup.clean()
-        backup.save()
+        backup = Backup.objects.create(name=name)
+        background_dump(backup.pk)
 
         self.stdout.write(self.style.SUCCESS(_("Backup criado com sucesso")))

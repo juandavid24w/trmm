@@ -5,10 +5,10 @@
   <div id="content-main" class="detail">
     <h2>{% trans 'Tem certeza?' %}</h2>
     <p>{% blocktranslate %}
-      Ao restaurar esse backup, todo o conteúdo atual do site vai ser perdido,
-      <strong>inclusive a lista de backups</strong>. Tenha certeza de ter
-      em mãos, no seu computador, um backup do estado atual do site, caso algo
-      dê errado. {% endblocktranslate %}
+      Ao restaurar esse backup, todo o conteúdo atual do site vai ser
+      perdido, exceto a lista de backups. Tenha certeza de ter em mãos, no seu
+      computador, um backup do estado atual do site, caso algo dê errado.
+    {% endblocktranslate %}
     </p>
     <form method="post">
       {% csrf_token %}

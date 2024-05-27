@@ -30,12 +30,15 @@ deploy_huey:
 	}
 	scp $(huey_service) $(host):/etc/systemd/system/huey.service
 
-deploy_restart_huey:
+
+deploy_enable_huey:
 	$(serverdo) 'systemctl enable huey'
+
+deploy_restart_huey:
 	$(serverdo) 'systemctl restart huey'
 
 huey_service=deploy/huey.service
-deploy_configuration: deploy_huey deploy_restart_huey
+deploy_configuration: deploy_huey deploy_enable_huey deploy_restart_huey
 
 deploy: deploy_pull deploy_pip deploy_migrate deploy_static \
 	deploy_restart deploy_backup deploy_restart_huey

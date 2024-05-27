@@ -5,25 +5,70 @@ from adminsortable2.admin import SortableAdminMixin
 from django.contrib import admin, messages
 from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.main import ChangeList
+from django.core.files.base import ContentFile
 from django.core.mail import send_mail
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django_object_actions import DjangoObjectActions, action
+from huey.contrib.djhuey import db_task
 from solo.admin import SingletonModelAdmin
 
 from admin_buttons.admin import AdminButtonsMixin
 
-from .backups import restore_from_obj
+from .backups import BackupError, dump, get_version, restore_from_obj
 from .models import (
     Backup,
     DocumentationPage,
     EmailConfiguration,
     SiteConfiguration,
 )
+
+
+@db_task()
+def background_dump(pk):
+    obj = Backup.objects.get(pk=pk)
+    try:
+        file = dump()
+    except BackupError as e:
+        obj.status = _("Erro ao gerar arquivo de backup: %(error)s") % {
+            "error": str(e)
+        }
+        obj.save()
+    else:
+        obj.dump.save(
+            name=obj.name + ".tar",
+            content=ContentFile(file),
+            save=False,
+        )
+        obj.status = _("Arquivo de backup gerado com sucesso")
+        obj.save()
+
+
+@db_task()
+def restore_from_pk(pk):
+    with transaction.atomic():
+        obj = Backup.objects.get(pk=pk)
+
+        try:
+            restore_from_obj(obj)
+        except BackupError as e:
+            obj.status = _(
+                "Erro ao restaurar arquivo de backup: %(error)s"
+            ) % {"error": str(e)}
+            obj.save()
+            return
+
+    obj = Backup.objects.get(pk=pk)
+    obj.status = _("Backup restaurado com sucesso")
+    obj.save()
+
 
 @admin.register(SiteConfiguration)
 class SiteConfigurationAdmin(SingletonModelAdmin):
@@ -123,14 +168,13 @@ class EmailConfigurationAdmin(DjangoObjectActions, SingletonModelAdmin):
 
 @admin.register(Backup)
 class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
-    readonly_fields = ["created"]
-    add_exclude = ["created", "db_dump", "media_dump"]
-    upload_exclude = ["created", "do_db_dump", "do_media_dump"]
+    readonly_fields = ["created", "compatible", "version", "admin_status"]
+    add_exclude = ["created", "dump", "compatible", "version", "admin_status"]
+    upload_exclude = ["created", "compatible", "version", "admin_status"]
     list_display = [
         "__str__",
-        "do_db_dump",
-        "do_media_dump",
         "created",
+        "compatible",
         "restore",
     ]
     changelist_actions = ["upload"]
@@ -139,6 +183,21 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
     def upload(self, request, obj):
         url = reverse("admin:site_configuration_backup_add")
         return HttpResponseRedirect(f"{url}?upload=true")
+
+    @admin.display(description=_("Compatível com essa versão?"), boolean=True)
+    def compatible(self, obj):
+        version = obj.version()
+        if version is None:
+            return None
+        return get_version() == obj.version()
+
+    @admin.display(description=_("Versão do arquivo"))
+    def version(self, obj):
+        return obj.version()
+
+    @admin.display(description=_("Status"))
+    def admin_status(self, obj):
+        return mark_safe(obj.status)
 
     @staticmethod
     def get_available_name(candidate=_("%(date)s_backup%(n)s")):
@@ -155,7 +214,10 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
 
     def get_changeform_initial_data(self, request):
         from_qs = super().get_changeform_initial_data(request)
-        defaults = {"name": self.get_available_name()}
+        if "upload" not in request.GET:
+            defaults = {"name": self.get_available_name()}
+        else:
+            defaults = {}
 
         defaults.update(from_qs)
         return defaults
@@ -206,35 +268,40 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
             request, object_id, form_url, extra_context
         )
 
-    def save_model(self, request, obj, form, change):
-        if "upload" in request.GET:
-            obj.do_db_dump = bool(obj.db_dump.name)
-            obj.do_media_dump = bool(obj.media_dump.name)
-
-        super().save_model(request, obj, form, change)
-
     @admin.display(description=" ")
     def restore(self, obj):
-        return format_html(
-            '<a href="{}">{}</a>',
-            reverse(
-                "admin:site_configuration_backup_restore", args=(obj.pk,)
-            ),
-            _("Restaurar"),
-        )
+        if self.compatible(obj):
+            return format_html(
+                '<a href="{}">{}</a>',
+                reverse(
+                    "admin:site_configuration_backup_restore", args=(obj.pk,)
+                ),
+                _("Restaurar"),
+            )
 
     def restore_view(self, request, object_id):
         obj = self.get_object(request, unquote(object_id))
 
+        url = reverse(
+            "admin:site_configuration_backup_change", args=(object_id,)
+        )
         if request.method == "POST" and "_restore" in request.POST:
-            messages.success(request, _("Restauração realizada com sucesso"))
-            restore_from_obj(obj)
 
-            return redirect("admin:site_configuration_backup_changelist")
-        if request.method == "POST" and "_restorecancel" in request.POST:
-            url = reverse(
-                "admin:site_configuration_backup_change", args=(object_id,)
+            msg = format_html(
+                '{}<a href="">{}</a>{}',
+                gettext("Restaurando arquivo de backup. "),
+                gettext("Recarregue"),
+                gettext(
+                    " a página em alguns minutos para consultar o resultado."
+                ),
             )
+            obj.status = msg
+            obj.save()
+            restore_from_pk(obj.pk)
+            messages.warning(request, msg)
+
+            return redirect(url)
+        if request.method == "POST" and "_restorecancel" in request.POST:
             return redirect(url)
 
         context = dict(
@@ -244,6 +311,23 @@ class BackupAdmin(AdminButtonsMixin, DjangoObjectActions, admin.ModelAdmin):
         return render(
             request, "site_configuration/restore.html", context=context
         )
+
+    def save_model(self, request, obj, *args, **kwargs):
+        if not obj.dump.name:
+            obj.status = format_html(
+                '{}<a href="">{}</a>{}',
+                gettext("Criando arquivo de backup. "),
+                gettext("Recarregue"),
+                gettext(
+                    " a página em alguns minutos para consultar o resultado."
+                ),
+            )
+        else:
+            obj.status = _("Upload do arquivo de backup feito com sucesso")
+
+        super().save_model(request, obj, *args, **kwargs)
+        if not obj.dump.name:
+            background_dump(obj.pk)
 
     admin_buttons_config = [
         {
