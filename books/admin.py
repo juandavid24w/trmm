@@ -252,7 +252,7 @@ class BookAdmin(
     def pending_labeling(self, obj):
         return obj.pending_labeling
 
-    @admin.display(description=_("Autoria"), ordering="author")
+    @admin.display(description=_("Autoria"), ordering="author_last_name")
     def author(self, obj):
         return obj.author
 
