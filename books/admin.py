@@ -131,6 +131,14 @@ class SpecimenInline(admin.TabularInline):
     def has_add_permission(self, *args, **kwargs):
         return False
 
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+
+        if request.user.has_perm("loans.add_loan"):
+            return fields
+
+        return [f for f in fields if f != "loan"]
+
     @admin.display(description=_("Fazer empréstimo"))
     def loan(self, obj):
         return loan_link({"specimen": obj.id})
@@ -321,7 +329,7 @@ class BookAdmin(
 
         return ii
 
-    def get_form(self, request, obj=None, **kwargs):
+    def get_form(self, request, obj=None, change=False, **kwargs):
         if obj is None:
             kwargs["help_texts"] = {
                 "units": _(
@@ -330,7 +338,7 @@ class BookAdmin(
             }
         else:
             kwargs["widgets"] = {}
-        return super().get_form(request, obj, **kwargs)
+        return super().get_form(request, obj, change, **kwargs)
 
     def add_specimen(self, request, obj):
         n = int(request.POST["n_specimens"])
