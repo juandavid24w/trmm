@@ -100,6 +100,7 @@ class Book(models.Model):
         verbose_name=_("ISBN"),
         null=True,
         blank=True,
+        unique=True,
     )
     canonical_isbn = models.CharField(
         max_length=13,
@@ -147,6 +148,7 @@ class Book(models.Model):
         verbose_name=_("Código cutter"),
         null=True,
         editable=False,
+        unique=True,
     )
     creation_date = models.DateTimeField(
         auto_now_add=True, verbose_name=_("Data de criação")
@@ -200,6 +202,9 @@ class Book(models.Model):
         if self.isbn:
             self.isbn = canonical(self.isbn)
             self.canonical_isbn = ean13(self.isbn)
+        else:
+            self.isbn = None
+            self.canonical_isbn = None
         self.unaccent_author = unidecode(
             f"{self.author_first_names} {self.author_last_name}"
         )
@@ -217,10 +222,6 @@ class Book(models.Model):
     class Meta:
         verbose_name = _("Livro")
         verbose_name_plural = _("Livros")
-        constraints = [
-            models.UniqueConstraint(fields=("isbn",), name="unique_isbn"),
-            models.UniqueConstraint(fields=("code",), name="unique_code"),
-        ]
         ordering = ["author_last_name", "title"]
 
 

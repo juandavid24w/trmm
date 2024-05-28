@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework_csv.parsers import CSVParser
 from rest_framework_csv.renderers import CSVRenderer
@@ -80,7 +81,20 @@ def csv_import(request, obj):
     serializer = reg.serializer(data=data, many=True)
 
     if serializer.is_valid():
-        serializer.save()
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except Exception as e:
+            raise ValidationError(
+                _(
+                    "Não foi possível realizar a importação dos "
+                    "%(objects)s : %(error)s"
+                )
+                % {
+                    "objects": reg.model._meta.verbose_name_plural,
+                    "error": str(e),
+                }
+            ) from e
         obj.error_file.delete()
     else:
         error_file = get_errors(request, obj, serializer.errors)

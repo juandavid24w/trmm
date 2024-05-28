@@ -1,4 +1,5 @@
 from django.utils.translation import gettext_lazy as _
+from isbnlib import ean13
 from rest_framework import serializers
 
 import csvio
@@ -42,7 +43,7 @@ class BookSerializer(serializers.ModelSerializer):
         return data
 
     def to_internal_value(self, data):
-        if isinstance(data["collection"], str):
+        if data.get("collection") and isinstance(data["collection"], str):
             name = data["collection"]
             try:
                 data["collection"] = Collection.objects.get(name=name).pk
@@ -54,6 +55,14 @@ class BookSerializer(serializers.ModelSerializer):
                         ]
                     }
                 ) from e
+
+        isbn = data.get("isbn")
+        isbn13 = ean13(isbn) if isbn else None
+
+        if isbn and Book.objects.filter(canonical_isbn=isbn13):
+            raise serializers.ValidationError(
+                {"isbn": [_("ISBN já existe!")]}
+            )
 
         return super().to_internal_value(data)
 
