@@ -1,3 +1,5 @@
+# Rules to be executed inside the server
+
 init:
 	$(manage) migrate --noinput
 	$(manage) collectstatic --noinput

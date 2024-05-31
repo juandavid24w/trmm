@@ -1,0 +1,28 @@
+<VirtualHost *:80>
+    ServerAdmin example@example.com
+    ServerName example@example.com
+
+    LogLevel error
+
+    Alias /media/ /root/mysite/media/
+    Alias /static/ /root/mysite/static/
+
+    <Directory /root/mysite/static>
+        Require all granted
+    </Directory>
+
+    <Directory /root/mysite/media>
+        Require all granted
+    </Directory>
+
+    WSGIDaemonProcess mysite python-home=/root/mysite/venv python-path=/root/mysite
+    WSGIProcessGroup mysite
+
+    WSGIScriptAlias / /root/mysite/mysite/wsgi.py
+
+    <Directory /root/mysite/mysite>
+        <Files wsgi.py>
+        Require all granted
+        </Files>
+    </Directory>
+</VirtualHost>

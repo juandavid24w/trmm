@@ -17,3 +17,4 @@ cert.key
 /data
 /todo
 /deploy/huey.service
+/deploy/*.conf

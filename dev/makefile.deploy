@@ -3,6 +3,13 @@
 serverdo=[ -n $(host) ] && ssh $(host)
 environ=set -a; . .env; set +a
 manage=$(environ); $(venv); ./manage.py
+git_repo=https://gitlab.com/joaoseckler/biblioteca
+
+deploy_restart_huey:
+	$(serverdo) 'systemctl restart huey'
+
+
+# Django
 
 deploy_pull:
 	$(serverdo) 'cd $(folder); git pull --rebase'
@@ -16,7 +23,7 @@ deploy_migrate:
 deploy_static:
 	$(serverdo) 'cd $(folder); $(manage) collectstatic --noinput'
 
-deploy_restart:
+deploy_restart: deploy_restart_huey
 	$(serverdo) 'systemctl restart apache2'
 
 backup_condition=git diff HEAD HEAD~1 --name-only | grep -q migrations
@@ -24,21 +31,10 @@ deploy_backup:
 	$(serverdo) 'cd $(folder); if $(backup_condition); then $(manage) backup; fi'
 
 
-deploy_huey:
-	@[ -f "$(huey_service)" ] || { \
-		echo "Não encontrei deploy/huey.service. Abortando..." && false ; \
-	}
-	scp $(huey_service) $(host):/etc/systemd/system/huey.service
-
-
-deploy_enable_huey:
-	$(serverdo) 'systemctl enable huey'
-
-deploy_restart_huey:
-	$(serverdo) 'systemctl restart huey'
-
-huey_service=deploy/huey.service
-deploy_configuration: deploy_huey deploy_enable_huey deploy_restart_huey
+# Deploy
 
 deploy: deploy_pull deploy_pip deploy_migrate deploy_static \
 	deploy_restart deploy_backup deploy_restart_huey
+
+
+-include dev/makefile.configure

@@ -1,0 +1,76 @@
+# Packages
+
+apt_packages=apache2 postgresql redis-server python3 \
+						 libapache2-mod-wsgi-py3 python3-venv libpq-dev \
+						 python3-dev git gcc
+pip_packages=psycopg2
+
+configure_packages:
+	$(serverdo) 'apt install $(apt_packages)'
+
+
+# Apache
+
+apache_conf=$(wildcard deploy/*.conf)
+
+configure_apache:
+	@[ -f "$(apache_conf)" ] || { \
+		echo "Couldn't find any '.conf' file. Aborting..." && false ; \
+	}
+	@conf=( $(apache_conf) ); [ "$${#conf[@]}" -eq 1 ] || { \
+		echo "Found more than one conf file. Aborting..." && false ; \
+	}
+	scp $(apache_conf) $(host):/etc/apache2/sites-available/
+	$(serverdo) 'a2ensite $$(basename $(apache_conf))'
+	$(serverdo) 'a2dissite 000-default.conf'
+
+
+# Postgresql
+
+configure_postgresql:
+	@[ -f .env ] || { \
+		echo "Couldn't find '.env'. Aborting..." && false ; \
+	}
+	$(serverdo) 'systemctl enable postgresql'
+	bash dev/configure_postgresql.sh $(host)
+	$(serverdo) 'systemctl restart postgresql'
+
+
+# Huey
+
+huey_service=deploy/huey.service
+
+configure_enable_huey:
+	$(serverdo) 'systemctl enable huey'
+
+configure_huey:
+	@[ -f "$(huey_service)" ] || { \
+		echo "Couldn't find $(huey_service). Aborting..." && false ; \
+	}
+	scp $(huey_service) $(host):/etc/systemd/system/huey.service
+
+
+
+# Configure server
+
+configure_folder:
+	@[ -f .env ] || { \
+		echo "Couldn't find '.env'. Aborting..." && false ; \
+	}
+	$(serverdo) '[ -d "$(folder)" ] || git clone $(git_repo) "$(folder)"'
+	if ssh $(host) [ ! -f $(folder)/.env ]; then scp .env $(host):$(folder); fi
+	$(serverdo) '[ -d "$(folder)/venv" ] || cd "$(folder)"; python3 -m venv venv'
+	$(serverdo) 'cd "$(folder)"; $(venv); pip install $(pip_packages)'
+	$(serverdo) 'chown -R www-data:www-data $(folder)'
+	if [[ "$(folder)" == /root/* ]]; then $(serverdo) 'chmod 755 /root/'; fi
+	if [[ "$(folder)" == /root/* ]]; then $(serverdo) 'git config --global --add safe.directory $(folder)'; fi
+	$(serverdo) 'chown -R www-data:www-data $(folder)'
+
+configure_superuser:
+	$(serverdo) 'cd $(folder); $(manage) createsuperuser --noinput'
+
+
+configure: configure_packages configure_apache configure_postgresql \
+	configure_folder configure_superuser configure_huey \
+	configure_enable_huey deploy_restart
+
